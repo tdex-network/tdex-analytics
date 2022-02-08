@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package tdexa.v1;
+
+/**
+ * Analytics service spec
+ */
+service Analytics {
+  // returns all markets and its balances in time series
+  rpc MarketsBalances(MarketsBalancesRequest) returns (MarketsBalancesReply) {}
+  // returns all markets and its prices in time series
+  rpc MarketsPrices(MarketsPricesRequest) returns (MarketsPricesReply) {}
+}
+
+message MarketsBalancesRequest {
+  // from_time fetch balances from time in past
+  string from_time = 1;
+  // fetch balances for specific market, if not provided all market's balances will be returned
+  int32 market_id = 2;
+}
+message MarketsBalancesReply {
+  // returns map of market_id and its balances sorted by time ASC
+  map<int32, MarketBalances> markets_balances = 1;
+}
+message MarketBalances {
+  repeated MarketBalance market_balance = 1;
+}
+message MarketBalance {
+  // base amount
+  int64 base_amount = 1;
+  // quote amount
+  int64 quote_amount = 2;
+  // point in time when market had this balance
+  string time = 3;
+}
+
+message MarketsPricesRequest {
+  // returns map of market_id and its prices sorted by time ASC
+  map<int32, MarketPrices> markets_prices = 1;
+}
+message MarketsPricesReply {
+  // returns list of Market's and their prices
+  repeated MarketPrice markets_balances = 1;
+}
+message MarketPrices {
+  repeated MarketPrice market_price = 1;
+}
+message MarketPrice {
+  // base amount
+  int64 base_price = 2;
+  // quote amount
+  int64 quote_price = 3;
+  // point in time when market had this price
+  string time = 4;
+}
