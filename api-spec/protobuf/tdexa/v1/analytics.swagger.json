@@ -1,0 +1,242 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "v1/analytics.proto",
+    "version": "version not set"
+  },
+  "tags": [
+    {
+      "name": "Analytics"
+    }
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "paths": {
+    "/v1/balances": {
+      "post": {
+        "summary": "returns all markets and its balances in time series",
+        "operationId": "Analytics_MarketsBalances",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MarketsBalancesReply"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1MarketsBalancesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
+    "/v1/prices": {
+      "post": {
+        "summary": "returns all markets and its prices in time series",
+        "operationId": "Analytics_MarketsPrices",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1MarketsPricesReply"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1MarketsPricesRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Analytics"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "protobufAny": {
+      "type": "object",
+      "properties": {
+        "@type": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": {}
+    },
+    "rpcStatus": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "integer",
+          "format": "int32"
+        },
+        "message": {
+          "type": "string"
+        },
+        "details": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/protobufAny"
+          }
+        }
+      }
+    },
+    "v1MarketBalance": {
+      "type": "object",
+      "properties": {
+        "baseBalance": {
+          "type": "string",
+          "format": "int64",
+          "title": "base balance"
+        },
+        "quoteBalance": {
+          "type": "string",
+          "format": "int64",
+          "title": "quote balance"
+        },
+        "time": {
+          "type": "string",
+          "title": "point in time when market had this balance"
+        }
+      }
+    },
+    "v1MarketBalances": {
+      "type": "object",
+      "properties": {
+        "marketBalance": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1MarketBalance"
+          }
+        }
+      }
+    },
+    "v1MarketPrice": {
+      "type": "object",
+      "properties": {
+        "basePrice": {
+          "type": "string",
+          "format": "int64",
+          "title": "base is the price of one unit of the base asset, priced in quote asset assuming the trade amount was, ie. 100 unit of that asset"
+        },
+        "quotePrice": {
+          "type": "string",
+          "format": "int64",
+          "title": "quote amount"
+        },
+        "baseReferencePrice": {
+          "type": "string",
+          "format": "int64",
+          "title": "base price converted to reference one"
+        },
+        "quoteReferencePrice": {
+          "type": "string",
+          "format": "int64",
+          "title": "quote price converted to reference one"
+        },
+        "time": {
+          "type": "string",
+          "title": "point in time when market had this price"
+        }
+      }
+    },
+    "v1MarketPrices": {
+      "type": "object",
+      "properties": {
+        "marketPrice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1MarketPrice"
+          },
+          "title": "returns list of Market's and their prices"
+        }
+      }
+    },
+    "v1MarketsBalancesReply": {
+      "type": "object",
+      "properties": {
+        "marketsBalances": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1MarketBalances"
+          },
+          "title": "returns map of market_id and its balances sorted by time ASC"
+        }
+      }
+    },
+    "v1MarketsBalancesRequest": {
+      "type": "object",
+      "properties": {
+        "fromTime": {
+          "type": "string",
+          "title": "from_time fetch balances from time in past"
+        },
+        "marketId": {
+          "type": "integer",
+          "format": "int32",
+          "title": "fetch balances for specific market, if not provided all market's balances will be returned"
+        }
+      }
+    },
+    "v1MarketsPricesReply": {
+      "type": "object",
+      "properties": {
+        "marketsPrices": {
+          "type": "object",
+          "additionalProperties": {
+            "$ref": "#/definitions/v1MarketPrices"
+          },
+          "title": "returns map of market_id and its prices sorted by time ASC"
+        }
+      }
+    },
+    "v1MarketsPricesRequest": {
+      "type": "object",
+      "properties": {
+        "fromTime": {
+          "type": "string",
+          "title": "from_time fetch prices from time in past"
+        },
+        "marketId": {
+          "type": "integer",
+          "format": "int32",
+          "title": "fetch prices for specific market, if not provided all market's balances will be returned"
+        },
+        "referenceCurrency": {
+          "type": "string",
+          "title": "reference fiat currency to which base and quote will be converted"
+        }
+      }
+    }
+  }
+}
