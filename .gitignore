@@ -1,5 +1,5 @@
 .idea
 
-.influxdb/engine
-.influxdb/influxd.bolt
-.influxdb/influxd.sqlite
+influxdb-data
+
+bin
