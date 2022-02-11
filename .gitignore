@@ -3,3 +3,5 @@
 influxdb-data
 
 bin
+
+.DS_Store
