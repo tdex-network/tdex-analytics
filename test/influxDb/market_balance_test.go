@@ -27,7 +27,7 @@ func TestInsertMarketBalance(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		if err := db.InsertBalance(ctx, domain.MarketBalance{
-			MarketID:     "213",
+			MarketID:     "2203",
 			BaseBalance:  50 + i,
 			BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 			QuoteBalance: 500 + i,
