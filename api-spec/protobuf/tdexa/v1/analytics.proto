@@ -26,9 +26,9 @@ service Analytics {
 
 message MarketsBalancesRequest {
   // from_time fetch balances from time in past
-  string from_time = 1;
-  // fetch balances for specific market, if not provided all market's balances will be returned
-  int32 market_id = 2;
+  FromTime from_time = 1;
+  // fetch balances for specific one or more market's
+  repeated int32 market_id = 2;
 }
 message MarketsBalancesReply {
   // returns map of market_id and its balances sorted by time ASC
@@ -48,7 +48,7 @@ message MarketBalance {
 
 message MarketsPricesRequest {
   // from_time fetch prices from time in past
-  string from_time = 1;
+  FromTime from_time = 1;
   // fetch prices for specific market, if not provided all market's balances will be returned
   int32 market_id = 2;
   // reference fiat currency to which base and quote will be converted
@@ -73,4 +73,22 @@ message MarketPrice {
   int64 quote_reference_price = 4;
   // point in time when market had this price
   string time = 5;
+}
+
+// FromTime is flexible type used to determine time span for which specific
+// api will fetch data, either one of exact_time or time_period should be provided.
+message FromTime {
+  // exact_time in past
+  string exact_time = 1;
+  // predefined time_period
+  TimePeriod time_period = 2;
+}
+
+enum TimePeriod {
+  LAST_HOUR = 0;
+  LAST_DAY = 1;
+  LAST_MONTH = 2;
+  LAST_3_MONTHS = 3;
+  YEAR_TO_DATE = 4;
+  ALL = 5;
 }
