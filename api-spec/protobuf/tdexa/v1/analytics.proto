@@ -1,0 +1,101 @@
+syntax = "proto3";
+
+package tdexa.v1;
+
+import "google/api/annotations.proto";
+
+/**
+ * Analytics service spec
+ */
+service Analytics {
+  // returns all markets and its balances in time series
+  rpc MarketsBalances(MarketsBalancesRequest) returns (MarketsBalancesReply) {
+    option (google.api.http) = {
+      post: "/v1/balances"
+      body: "*"
+    };
+  }
+  // returns all markets and its prices in time series
+  rpc MarketsPrices(MarketsPricesRequest) returns (MarketsPricesReply) {
+    option (google.api.http) = {
+      post: "/v1/prices"
+      body: "*"
+    };
+  }
+}
+
+message MarketsBalancesRequest {
+  // time_range fetch balances from time range
+  TimeRange time_range = 1;
+  // fetch balances for specific one or more market's
+  repeated int32 market_id = 2;
+}
+message MarketsBalancesReply {
+  // returns map of market_id and its balances sorted by time ASC
+  map<int32, MarketBalances> markets_balances = 1;
+}
+message MarketBalances {
+  repeated MarketBalance market_balance = 1;
+}
+message MarketBalance {
+  // base balance
+  int64 base_balance = 1;
+  // quote balance
+  int64 quote_balance = 2;
+  // point in time when market had this balance
+  string time = 3;
+}
+
+message MarketsPricesRequest {
+  // time_range fetch prices for time range
+  TimeRange time_range = 1;
+  // fetch prices for specific market, if not provided all market's balances will be returned
+  int32 market_id = 2;
+  // reference fiat currency to which base and quote will be converted
+  string reference_currency = 3;
+}
+message MarketsPricesReply {
+  // returns map of market_id and its prices sorted by time ASC
+  map<int32, MarketPrices> markets_prices = 1;
+}
+message MarketPrices {
+  // returns list of Market's and their prices
+  repeated MarketPrice market_price = 1;
+}
+message MarketPrice {
+  // base is the price of one unit of the base asset, priced in quote asset assuming the trade amount was, ie. 100 unit of that asset
+  int64 base_price = 1;
+  // quote amount
+  int64 quote_price = 2;
+  // base price converted to reference one
+  int64 base_reference_price = 3;
+  // quote price converted to reference one
+  int64 quote_reference_price = 4;
+  // point in time when market had this price
+  string time = 5;
+}
+
+// TimeRange is flexible type used to determine time span for which specific
+// api will fetch data, either one of predefined_period or custom_period should be provided.
+message TimeRange {
+  // predefined time_period till now
+  PredefinedPeriod predefined_period = 1;
+  // granular time range
+  CustomPeriod custom_period = 2;
+}
+
+message CustomPeriod {
+  // start_date in RFC3339 format
+  string start_date = 1;
+  // end_date in RFC3339 format
+  string end_date = 2;
+}
+
+enum PredefinedPeriod {
+  LAST_HOUR = 0;
+  LAST_DAY = 1;
+  LAST_MONTH = 2;
+  LAST_3_MONTHS = 3;
+  YEAR_TO_DATE = 4;
+  ALL = 5;
+}
