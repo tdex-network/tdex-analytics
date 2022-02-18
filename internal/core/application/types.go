@@ -3,10 +3,24 @@ package application
 import (
 	"encoding/hex"
 	"errors"
+	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/pkg/hexerr"
 	"time"
+)
+
+const (
+	// NIL is added in proto file to recognised when predefined period is passed
+	NIL PredefinedPeriod = iota
+	LastHour
+	LastDay
+	LastMonth
+	LastThreeMonths
+	YearToDate
+	All
+
+	StartYear = 2022
 )
 
 type MarketBalance struct {
@@ -24,7 +38,6 @@ func (m *MarketBalance) validate() error {
 		validation.Field(&m.MarketID, validation.Required),
 		validation.Field(&m.BaseAsset, validation.By(validateAssetString)),
 		validation.Field(&m.QuoteAsset, validation.By(validateAssetString)),
-		validation.Field(&m.Time, validation.By(validateTimeFormat)),
 	)
 }
 
@@ -108,7 +121,7 @@ func validateTimeFormat(t interface{}) error {
 
 type MarketsBalances struct {
 	//market_id and its Balances
-	MarketsBalances map[int][]Balance
+	MarketsBalances map[string][]Balance
 }
 
 type Balance struct {
@@ -121,7 +134,7 @@ type Balance struct {
 
 type MarketsPrices struct {
 	//market_id and its Prices
-	MarketsPrices map[int][]Price
+	MarketsPrices map[string][]Price
 }
 
 type Price struct {
@@ -130,4 +143,108 @@ type Price struct {
 	QuotePrice int
 	QuoteAsset string
 	Time       time.Time
+}
+
+type TimeRange struct {
+	PredefinedPeriod *PredefinedPeriod
+	CustomPeriod     *CustomPeriod
+}
+
+func (t *TimeRange) validate() error {
+	if t.CustomPeriod == nil && t.PredefinedPeriod == nil {
+		return hexerr.NewApplicationLayerError(
+			hexerr.InvalidRequest,
+			"both PredefinedPeriod period and CustomPeriod cant be null",
+		)
+	}
+
+	if t.CustomPeriod != nil && t.PredefinedPeriod != nil {
+		return hexerr.NewApplicationLayerError(
+			hexerr.InvalidRequest,
+			"both PredefinedPeriod period and CustomPeriod cant be not null",
+		)
+	}
+
+	if t.CustomPeriod != nil {
+		if err := t.CustomPeriod.validate(); err != nil {
+			return err
+		}
+	}
+
+	if t.PredefinedPeriod != nil {
+		if err := t.PredefinedPeriod.validate(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+type PredefinedPeriod int
+
+func (p *PredefinedPeriod) validate() error {
+	if *p > All {
+		return hexerr.NewApplicationLayerError(
+			hexerr.InvalidRequest,
+			fmt.Sprintf("PredefinedPeriod cant be > %v", All),
+		)
+	}
+
+	return nil
+}
+
+type CustomPeriod struct {
+	StartDate string
+	EndDate   string
+}
+
+func (c *CustomPeriod) validate() error {
+	return validation.ValidateStruct(
+		c,
+		validation.Field(&c.StartDate, validation.By(validateTimeFormat)),
+		validation.Field(&c.EndDate, validation.By(validateTimeFormat)),
+	)
+}
+
+func (t *TimeRange) getStartAndEndTime(now time.Time) (startTime time.Time, endTime time.Time, err error) {
+	if er := t.validate(); er != nil {
+		err = er
+		return
+	}
+
+	if t.CustomPeriod != nil {
+		start, _ := time.Parse(time.RFC3339, t.CustomPeriod.StartDate)
+		startTime = start
+
+		endTime = now
+		if t.CustomPeriod.EndDate != "" {
+			end, _ := time.Parse(time.RFC3339, t.CustomPeriod.EndDate)
+			endTime = end
+		}
+		return
+	}
+
+	if t.PredefinedPeriod != nil {
+		var start time.Time
+		switch *t.PredefinedPeriod {
+		case LastHour:
+			start = now.Add(time.Duration(-60) * time.Minute)
+		case LastDay:
+			start = now.AddDate(0, 0, -1)
+		case LastMonth:
+			start = now.AddDate(0, -1, 0)
+		case LastThreeMonths:
+			start = now.AddDate(0, -3, 0)
+		case YearToDate:
+			y, _, _ := now.Date()
+			start = time.Date(y, time.January, 1, 0, 0, 0, 0, time.UTC)
+		case All:
+			start = time.Date(StartYear, time.January, 1, 0, 0, 0, 0, time.UTC)
+		}
+
+		startTime = start
+		endTime = now
+	}
+
+	return
 }

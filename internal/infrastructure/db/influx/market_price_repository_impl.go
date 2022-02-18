@@ -2,7 +2,6 @@ package dbinflux
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"tdex-analytics/internal/core/domain"
@@ -30,80 +29,21 @@ func (i *influxDbService) InsertPrice(
 	return nil
 }
 
-func (i *influxDbService) GetPricesForMarket(
+func (i *influxDbService) GetPricesForMarkets(
 	ctx context.Context,
-	marketID string,
-	fromTime time.Time,
-) ([]domain.MarketPrice, error) {
-	queryAPI := i.client.QueryAPI(i.org)
-	query := fmt.Sprintf(
-		"from(bucket:\"%v\")|> range(start: %s)|> filter(fn: (r) => r._measurement == \"%v\" and r.market_id==\"%v\")|> sort()",
-		i.analyticsBucket,
-		fromTime.Format(time.RFC3339),
-		MarketPriceTable,
-		marketID,
-	)
-	result, err := queryAPI.Query(
-		ctx,
-		query,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	resultPoints := make(map[time.Time]domain.MarketPrice)
-	for result.Next() {
-		val, ok := resultPoints[result.Record().Time()]
-		if !ok {
-			val = domain.MarketPrice{
-				MarketID: result.Record().ValueByKey(marketTag).(string),
-			}
-		}
-
-		switch field := result.Record().Field(); field {
-		case baseAsset:
-			val.BaseAsset = result.Record().Value().(string)
-		case basePrice:
-			val.BasePrice = int(result.Record().Value().(int64))
-		case quoteAsset:
-			val.QuoteAsset = result.Record().Value().(string)
-		case quotePrice:
-			val.QuotePrice = int(result.Record().Value().(int64))
-		default:
-			return nil, errors.New(fmt.Sprintf("unrecognized field %v", field))
-		}
-
-		resultPoints[result.Record().Time()] = val
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	response := make([]domain.MarketPrice, 0)
-	for k, v := range resultPoints {
-		response = append(response, domain.MarketPrice{
-			MarketID:   v.MarketID,
-			BasePrice:  v.BasePrice,
-			BaseAsset:  v.BaseAsset,
-			QuotePrice: v.QuotePrice,
-			QuoteAsset: v.QuoteAsset,
-			Time:       k,
-		})
-	}
-
-	return response, nil
-}
-
-func (i *influxDbService) GetPricesForAllMarkets(
-	ctx context.Context,
-	fromTime time.Time,
+	startTime time.Time,
+	endTime time.Time,
+	marketIDs ...string,
 ) (map[string][]domain.MarketPrice, error) {
+	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"from(bucket:\"%v\")|> range(start: %s)|> filter(fn: (r) => r._measurement == \"%v\")|> sort()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => r._measurement == \"%v\" %v)|> sort() |> schema.fieldsAsCols()",
 		i.analyticsBucket,
-		fromTime.Format(time.RFC3339),
+		startTime.Format(time.RFC3339),
+		endTime.Format(time.RFC3339),
 		MarketPriceTable,
+		marketIDsFilter,
 	)
 	result, err := queryAPI.Query(
 		ctx,
@@ -111,59 +51,27 @@ func (i *influxDbService) GetPricesForAllMarkets(
 	)
 	if err != nil {
 		return nil, err
-	}
-
-	resultPoints := make(map[time.Time]domain.MarketPrice)
-	for result.Next() {
-		val, ok := resultPoints[result.Record().Time()]
-		if !ok {
-			val = domain.MarketPrice{
-				MarketID: result.Record().ValueByKey(marketTag).(string),
-			}
-		}
-
-		switch field := result.Record().Field(); field {
-		case baseAsset:
-			val.BaseAsset = result.Record().Value().(string)
-		case basePrice:
-			val.BasePrice = int(result.Record().Value().(int64))
-		case quoteAsset:
-			val.QuoteAsset = result.Record().Value().(string)
-		case quotePrice:
-			val.QuotePrice = int(result.Record().Value().(int64))
-		default:
-			return nil, errors.New(fmt.Sprintf("unrecognized field %v", field))
-		}
-
-		resultPoints[result.Record().Time()] = val
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
 	}
 
 	response := make(map[string][]domain.MarketPrice)
-	for k, v := range resultPoints {
-		if v1, ok := response[v.MarketID]; !ok {
+	for result.Next() {
+		marketID := result.Record().ValueByKey(marketTag).(string)
+		marketPrice := domain.MarketPrice{
+			MarketID:   result.Record().ValueByKey(marketTag).(string),
+			BasePrice:  int(result.Record().ValueByKey(basePrice).(int64)),
+			BaseAsset:  result.Record().ValueByKey(baseAsset).(string),
+			QuotePrice: int(result.Record().ValueByKey(basePrice).(int64)),
+			QuoteAsset: result.Record().ValueByKey(quoteAsset).(string),
+			Time:       result.Record().Time(),
+		}
+		val, ok := response[marketID]
+		if !ok {
 			prices := make([]domain.MarketPrice, 0)
-			prices = append(prices, domain.MarketPrice{
-				MarketID:   v.MarketID,
-				BasePrice:  v.BasePrice,
-				BaseAsset:  v.BaseAsset,
-				QuotePrice: v.QuotePrice,
-				QuoteAsset: v.QuoteAsset,
-				Time:       k,
-			})
-			response[v.MarketID] = prices
+			prices = append(prices, marketPrice)
+			response[marketID] = prices
 		} else {
-			v1 = append(v1, domain.MarketPrice{
-				MarketID:   v.MarketID,
-				BasePrice:  v.BasePrice,
-				BaseAsset:  v.BaseAsset,
-				QuotePrice: v.QuotePrice,
-				QuoteAsset: v.QuoteAsset,
-				Time:       k,
-			})
-			response[v.MarketID] = v1
+			val = append(val, marketPrice)
+			response[marketID] = val
 		}
 	}
 

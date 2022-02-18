@@ -28,14 +28,14 @@ func (a *analyticsHandler) MarketsBalances(
 ) (*tdexav1.MarketsBalancesReply, error) {
 	mb, err := a.marketBalanceSvc.GetBalances(
 		ctx,
-		int(req.GetMarketId()),
-		req.GetFromTime(),
+		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
+		req.GetMarketIds()...,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	marketsBalances := make(map[int32]*tdexav1.MarketBalances)
+	marketsBalances := make(map[string]*tdexav1.MarketBalances)
 
 	for k, v := range mb.MarketsBalances {
 		marketBalances := make([]*tdexav1.MarketBalance, 0)
@@ -46,7 +46,7 @@ func (a *analyticsHandler) MarketsBalances(
 				Time:         v1.Time.String(),
 			})
 		}
-		marketsBalances[int32(k)] = &tdexav1.MarketBalances{
+		marketsBalances[k] = &tdexav1.MarketBalances{
 			MarketBalance: marketBalances,
 		}
 	}
@@ -61,14 +61,14 @@ func (a *analyticsHandler) MarketsPrices(
 ) (*tdexav1.MarketsPricesReply, error) {
 	mb, err := a.marketPriceSvc.GetPrices(
 		ctx,
-		int(req.GetMarketId()),
-		req.GetFromTime(),
+		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
+		req.GetMarketIds()...,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	marketsPrices := make(map[int32]*tdexav1.MarketPrices)
+	marketsPrices := make(map[string]*tdexav1.MarketPrices)
 
 	for k, v := range mb.MarketsPrices {
 		marketPrices := make([]*tdexav1.MarketPrice, 0)
@@ -79,7 +79,7 @@ func (a *analyticsHandler) MarketsPrices(
 				Time:       v1.Time.String(),
 			})
 		}
-		marketsPrices[int32(k)] = &tdexav1.MarketPrices{
+		marketsPrices[k] = &tdexav1.MarketPrices{
 			MarketPrice: marketPrices,
 		}
 	}
@@ -87,4 +87,25 @@ func (a *analyticsHandler) MarketsPrices(
 	return &tdexav1.MarketsPricesReply{
 		MarketsPrices: marketsPrices,
 	}, nil
+}
+
+func grpcTimeRangeToAppTimeRange(timeRange *tdexav1.TimeRange) application.TimeRange {
+	var predefinedPeriod *application.PredefinedPeriod
+	if timeRange.GetPredefinedPeriod() > tdexav1.PredefinedPeriod_NULL {
+		pp := application.PredefinedPeriod(timeRange.GetPredefinedPeriod())
+		predefinedPeriod = &pp
+	}
+
+	var customPeriod *application.CustomPeriod
+	if timeRange.GetCustomPeriod() != nil {
+		customPeriod = &application.CustomPeriod{
+			StartDate: timeRange.GetCustomPeriod().GetStartDate(),
+			EndDate:   timeRange.GetCustomPeriod().GetEndDate(),
+		}
+	}
+
+	return application.TimeRange{
+		PredefinedPeriod: predefinedPeriod,
+		CustomPeriod:     customPeriod,
+	}
 }

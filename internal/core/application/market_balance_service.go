@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"errors"
-	"strconv"
 	"tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -22,8 +21,8 @@ type MarketBalanceService interface {
 	//if marketID is passed method will return data for all market's, otherwise only for provided one
 	GetBalances(
 		ctx context.Context,
-		marketID int,
-		fromTime string,
+		timeRange TimeRange,
+		marketIDs ...string,
 	) (*MarketsBalances, error)
 }
 
@@ -57,62 +56,39 @@ func (m *marketBalanceService) InsertBalance(
 
 func (m *marketBalanceService) GetBalances(
 	ctx context.Context,
-	marketID int,
-	fromTime string,
+	timeRange TimeRange,
+	marketIDs ...string,
 ) (*MarketsBalances, error) {
-	result := make(map[int][]Balance)
+	result := make(map[string][]Balance)
 
-	if err := validateTimeFormat(fromTime); err != nil {
+	startTime, endTime, err := timeRange.getStartAndEndTime(time.Now())
+	if err != nil {
 		return nil, err
 	}
 
-	tm, _ := time.Parse(time.RFC3339, fromTime)
+	marketsBalances, err := m.marketBalanceRepository.GetBalancesForMarkets(
+		ctx,
+		startTime,
+		endTime,
+		marketIDs...,
+	)
+	if err != nil {
+		return nil, err
+	}
 
-	if marketID > 0 {
-		marketBalances, err := m.marketBalanceRepository.GetBalancesForMarket(ctx, strconv.Itoa(marketID), tm)
-		if err != nil {
-			return nil, err
-		}
+	for k, v := range marketsBalances {
 		balances := make([]Balance, 0)
-		for _, v := range marketBalances {
+		for _, v1 := range v {
 			balances = append(balances, Balance{
-				BaseBalance:  v.BaseBalance,
-				BaseAsset:    v.BaseAsset,
-				QuoteBalance: v.QuoteBalance,
-				QuoteAsset:   v.QuoteAsset,
-				Time:         v.Time,
+				BaseBalance:  v1.BaseBalance,
+				BaseAsset:    v1.BaseAsset,
+				QuoteBalance: v1.QuoteBalance,
+				QuoteAsset:   v1.QuoteAsset,
+				Time:         v1.Time,
 			})
-
-			marketID, err := strconv.Atoi(v.MarketID)
-			if err != nil {
-				return nil, err
-			}
-
-			result[marketID] = balances
-		}
-	} else {
-		marketsBalances, err := m.marketBalanceRepository.GetBalancesForAllMarkets(ctx, tm)
-		if err != nil {
-			return nil, err
 		}
 
-		for k, v := range marketsBalances {
-			balances := make([]Balance, 0)
-			for _, v1 := range v {
-				balances = append(balances, Balance{
-					BaseBalance:  v1.BaseBalance,
-					BaseAsset:    v1.BaseAsset,
-					QuoteBalance: v1.QuoteBalance,
-					QuoteAsset:   v1.QuoteAsset,
-					Time:         v1.Time,
-				})
-			}
-			marketID, err := strconv.Atoi(k)
-			if err != nil {
-				return nil, err
-			}
-			result[marketID] = balances
-		}
+		result[k] = balances
 	}
 
 	return &MarketsBalances{
