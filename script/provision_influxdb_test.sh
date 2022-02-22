@@ -27,6 +27,9 @@ docker exec influxdb influx setup \
 # get the token
 export TDEXA_INFLUXDB_TOKEN=$(docker exec influxdb influx auth list | awk -v username="$INFLUXDB_USERNAME" '$5 ~ username {print $4 " "}')
 echo "InfluxDB token: ${TDEXA_INFLUXDB_TOKEN}"
+echo $GITHUB_ENV
+echo "TDEXA_INFLUXDB_TOKEN=${TDEXA_INFLUXDB_TOKEN}" >> $GITHUB_ENV
+echo $GITHUB_ENV
 # insert data
 docker exec influxdb influx write -b analytics -o tdex-network -f balances.txt
 docker exec influxdb influx write -b analytics -o tdex-network -f prices.txt
