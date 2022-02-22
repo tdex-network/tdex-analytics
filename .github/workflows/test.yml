@@ -33,7 +33,9 @@ jobs:
         run: make vet
 
       - name: Setup Influx Db
-        run: make pit
+        run: |
+          make pit
+          echo "::set-env name=TDEXA_INFLUXDB_TOKEN::$TDEXA_INFLUXDB_TOKEN"
 
       - name: Run tests
         run: make testall

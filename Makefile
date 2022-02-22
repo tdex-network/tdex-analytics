@@ -1,4 +1,4 @@
-.PHONY: build-server build-cli build proto si iid fmt vet clean ci testall influxdb
+.PHONY: build-server build-cli build proto si iid fmt vet clean ci testall testinfluxdb testapp
 
 ## build the tower server
 build-server:
@@ -40,9 +40,14 @@ clean:
 ci: clean fmt vet testall
 
 # testall: test all
-testall: influxdb
+testall: testinfluxdb testapp
 
-# influxdb: test influxdb
-influxdb:
+# testinfluxdb: test influxdb
+testinfluxdb:
 	@echo "Testing influxdb..."
 	go test -v -count=1 -race ./test/influx-db/...
+
+# testapp: test application layer
+testapp:
+	@echo "Testing influxdb..."
+	go test -v -count=1 -race ./test/application/...
