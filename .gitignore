@@ -5,3 +5,6 @@ influxdb-data
 bin
 
 .DS_Store
+
+script/prices.txt
+script/balances.txt

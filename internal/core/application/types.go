@@ -161,7 +161,7 @@ func (t *TimeRange) validate() error {
 	if t.CustomPeriod != nil && t.PredefinedPeriod != nil {
 		return hexerr.NewApplicationLayerError(
 			hexerr.InvalidRequest,
-			"both PredefinedPeriod period and CustomPeriod cant be not null",
+			"both PredefinedPeriod period and CustomPeriod provided, please provide only one",
 		)
 	}
 

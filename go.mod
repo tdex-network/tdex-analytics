@@ -12,6 +12,7 @@ require (
 	github.com/influxdata/influxdb-client-go/v2 v2.7.0
 	github.com/sirupsen/logrus v1.7.0
 	github.com/spf13/viper v1.10.1
+	github.com/stretchr/testify v1.7.0
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/crypto v0.0.0-20210921155107-089bfa567519 // indirect
 	golang.org/x/net v0.0.0-20211013171255-e13a2654a71e
