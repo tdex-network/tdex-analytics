@@ -78,25 +78,6 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 			wantErr: true,
 		},
 		{
-			name: "fetch balances for two markets for last hour",
-			args: args{
-				ctx: ctx,
-				timeRange: application.TimeRange{
-					PredefinedPeriod: &lastHourPp,
-					CustomPeriod:     nil,
-				},
-				marketIDs: nil,
-			},
-			validateResponse: func(balances *application.MarketsBalances) error {
-				if len(balances.MarketsBalances) != 2 {
-					return errors.New("expected balances for 2 markets")
-				}
-
-				return nil
-			},
-			wantErr: false,
-		},
-		{
 			name: "fetch balances for one market for last hour",
 			args: args{
 				ctx: ctx,
