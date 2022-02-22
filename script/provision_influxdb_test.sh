@@ -30,6 +30,8 @@ echo "InfluxDB token: ${TDEXA_INFLUXDB_TOKEN}"
 cat $GITHUB_ENV
 echo "TDEXA_INFLUXDB_TOKEN=${TDEXA_INFLUXDB_TOKEN}" >> $GITHUB_ENV
 cat $GITHUB_ENV
+cat $GITHUB_ENV
+cat $GITHUB_ENV
 # insert data
 docker exec influxdb influx write -b analytics -o tdex-network -f balances.txt
 docker exec influxdb influx write -b analytics -o tdex-network -f prices.txt
