@@ -35,7 +35,7 @@ jobs:
       - name: Setup Influx Db
         run: |
           make pit
-          echo "TDEXA_INFLUXDB_TOKEN=$TDEXA_INFLUXDB_TOKEN" >> $GITHUB_ENV
+          echo TDEXA_INFLUXDB_TOKEN=$TDEXA_INFLUXDB_TOKEN >> $GITHUB_ENV
 
       - name: Run tests
         run: make testall
