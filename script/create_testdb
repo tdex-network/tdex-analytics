@@ -1,0 +1,5 @@
+#!/bin/bash
+
+docker run --name tdexa-postgres -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres
+sleep 3
+docker exec tdexa-postgres createdb --username=root --owner=root tdexa-test

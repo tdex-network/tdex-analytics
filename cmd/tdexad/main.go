@@ -10,6 +10,7 @@ import (
 	"tdex-analytics/internal/config"
 	"tdex-analytics/internal/core/application"
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
+	dbpg "tdex-analytics/internal/infrastructure/db/pg"
 	tdexagrpc "tdex-analytics/internal/interface/grpc"
 )
 
@@ -24,8 +25,21 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	marketBalanceSvc := application.NewMarketBalanceService(influxDbSvc)
-	marketPriceSvc := application.NewMarketPriceService(influxDbSvc)
+	marketRepository, err := dbpg.New(dbpg.DbConfig{
+		DbUser:             config.GetString(config.DbUserKey),
+		DbPassword:         config.GetString(config.DbPassKey),
+		DbHost:             config.GetString(config.DbHostKey),
+		DbPort:             config.GetInt(config.DbPortKey),
+		DbName:             config.GetString(config.DbNameKey),
+		MigrationSourceURL: config.GetString(config.DbMigrationPath),
+		DbInsecure:         config.GetBool(config.DbInsecure),
+		AwsRegion:          config.GetString(config.AwsRegion),
+	})
+
+	//TODO external fetcher impl
+
+	marketBalanceSvc := application.NewMarketBalanceService(influxDbSvc, marketRepository, nil)
+	marketPriceSvc := application.NewMarketPriceService(influxDbSvc, marketRepository, nil)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
 

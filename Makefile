@@ -1,11 +1,12 @@
-.PHONY: build-server build-cli build proto si iid fmt vet clean ci testall testinfluxdb testapp
+.PHONY: build-server build-cli build proto si iid fmt vet clean ci testall \
+testinfluxdb testapp pg createdb dropdb createtestdb droptestdb pgcreatetestdb
 
-## build the tower server
+## build the tdexa server
 build-server:
 	@export GO111MODULE=on; \
 	env go build -tags netgo -ldflags="-s -w" -o bin/tdexad cmd/tdexad/main.go
 
-## build only the tower CLI
+## build only the tdexa CLI
 build-cli:
 	@export GO111MODULE=on; \
 	env go build -tags netgo -ldflags="-s -w" -o bin/tdexa cmd/tdexa/*.go
@@ -40,14 +41,44 @@ clean:
 ci: clean fmt vet testall
 
 # testall: test all
-testall: testinfluxdb testapp
+testall: testpgdb testinfluxdb testapp
 
 # testinfluxdb: test influxdb
 testinfluxdb:
 	@echo "Testing influxdb..."
 	go test -v -count=1 -race ./test/influx-db/...
 
+## testpgdb: tests only pg db
+testpgdb:
+	@echo "Testing database layer..."
+	go test -v -count=1 -race -timeout 30s ./test/pg-db/...
+
 # testapp: test application layer
 testapp:
 	@echo "Testing influxdb..."
 	go test -v -count=1 -race ./test/application/...
+
+## pg: starts postgres db inside docker container
+pg:
+	docker run --name tdexa-postgres -p 5432:5432 -e POSTGRES_USER=root -e POSTGRES_PASSWORD=secret -d postgres
+
+## createdb: create db inside docker container
+createdb:
+	docker exec tdexa-postgres createdb --username=root --owner=root tdexa
+
+## dropdb: drops db inside docker container
+dropdb:
+	docker exec tdexa-postgres dropdb tdexa
+
+## createtestdb: create test db inside docker container
+createtestdb:
+	docker exec tdexa-postgres createdb --username=root --owner=root tdexa-test
+
+## droptestdb: drops test db inside docker container
+droptestdb:
+	docker exec tdexa-postgres dropdb tdexa-test
+
+## pgcreatetestdb: starts docker container and creates test db, used in CI
+pgcreatetestdb:
+	chmod u+x ./script/create_testdb
+	./script/create_testdb
