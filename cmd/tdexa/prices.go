@@ -12,18 +12,56 @@ var listPricesCmd = &cli.Command{
 	Action: listPricesAction,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "from_time",
-			Usage:    "fetch prices from specific time in the past til now",
-			Required: true,
+			Name:  "start",
+			Usage: "fetch balances from specific time in the past, please provide end flag also",
+		},
+		&cli.StringFlag{
+			Name:  "end",
+			Usage: "fetch balances from specific time in the past til end date, use with start flag",
+		},
+		&cli.StringSliceFlag{
+			Name:  "market_id",
+			Usage: "market_id to fetch balances for",
+		},
+		&cli.IntFlag{
+			Name: "predefined_period",
+			Usage: "time predefined periods:\n" +
+				"       1 -> last hour\n" +
+				"       2 -> last day\n" +
+				"       3 -> last month\n" +
+				"       4 -> last 3 months\n" +
+				"       5 -> year to date\n" +
+				"       6 -> all",
+			Value: 2,
 		},
 	},
 }
 
 func listPricesAction(ctx *cli.Context) error {
-	fromTime := ctx.String("from_time")
+	marketIDs := ctx.StringSlice("market_id")
+
+	var customPeriod *tdexav1.CustomPeriod
+	start := ctx.String("start")
+	end := ctx.String("end")
+	if start != "" && end != "" {
+		customPeriod = &tdexav1.CustomPeriod{
+			StartDate: start,
+			EndDate:   end,
+		}
+	}
+
+	var predefinedPeriod tdexav1.PredefinedPeriod
+	pp := ctx.Int("predefined_period")
+	if pp > 0 {
+		predefinedPeriod = tdexav1.PredefinedPeriod(pp)
+	}
 
 	req := &tdexav1.MarketsPricesRequest{
-		FromTime: fromTime,
+		TimeRange: &tdexav1.TimeRange{
+			PredefinedPeriod: predefinedPeriod,
+			CustomPeriod:     customPeriod,
+		},
+		MarketIds: marketIDs,
 	}
 
 	client, cleanup, err := getAnalyticsClient()

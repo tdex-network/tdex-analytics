@@ -1,4 +1,4 @@
-.PHONY: build-server build-cli build proto provision
+.PHONY: build-server build-cli build proto si iid fmt vet clean ci testall testinfluxdb testapp
 
 ## build the tower server
 build-server:
@@ -17,6 +17,37 @@ build: build-server build-cli
 proto:
 	buf generate
 
-## provision: start tdexa daemon and influxdb and insert rand balances and prices data
-provision:
-	INFLUXDB_BUCKET=analytics INFLUXDB_ORG=tdex-network INFLUXDB_PASSWORD=admin123 INFLUXDB_USERNAME=admin ./script/provision.sh
+## pit: provision influxdb used for testing test
+pit:
+	INFLUXDB_BUCKET=analytics INFLUXDB_ORG=tdex-network INFLUXDB_PASSWORD=admin123 INFLUXDB_USERNAME=admin ./script/provision_influxdb_test.sh
+
+## fmt: Go Format
+fmt:
+	@echo "Gofmt..."
+	@if [ -n "$(gofmt -l .)" ]; then echo "Go code is not formatted"; exit 1; fi
+
+## vet: code analysis
+vet:
+	@echo "Vet..."
+	@go vet ./...
+
+## clean: cleans the binary
+clean:
+	@echo "Cleaning..."
+	@go clean
+
+## ci: continuous integration
+ci: clean fmt vet testall
+
+# testall: test all
+testall: testinfluxdb testapp
+
+# testinfluxdb: test influxdb
+testinfluxdb:
+	@echo "Testing influxdb..."
+	go test -v -count=1 -race ./test/influx-db/...
+
+# testapp: test application layer
+testapp:
+	@echo "Testing influxdb..."
+	go test -v -count=1 -race ./test/application/...

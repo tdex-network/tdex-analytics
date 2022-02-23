@@ -14,7 +14,7 @@ import (
 )
 
 func main() {
-	influxDbSvc, err := dbinflux.NewInfluxDb(dbinflux.Config{
+	influxDbSvc, err := dbinflux.New(dbinflux.Config{
 		Org:             config.GetString(config.InfluxDbOrg),
 		AuthToken:       config.GetString(config.InfluxDbAuthToken),
 		DbUrl:           config.GetString(config.InfluxDbUrl),

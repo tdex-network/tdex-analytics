@@ -14,11 +14,11 @@ Config CLI:
 ```
 ./bin/tdexa config
 ```
-List balances:
+List balances for last hour:
 ```
-./bin/tdexa balances --from_time "2022-02-08T14:34:40+01:00"
+./bin/tdexa balances --predefined_period 1
 ```
-List prices:
+List prices for last hour:
 ```
-./bin/tdexa prices --from_time "2022-02-08T14:34:40+01:00"
+./bin/tdexa prices --predefined_period 1
 ```

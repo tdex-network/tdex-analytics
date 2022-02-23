@@ -7,6 +7,10 @@ import (
 
 type MarketBalanceRepository interface {
 	InsertBalance(ctx context.Context, balance MarketBalance) error
-	GetBalancesForMarket(ctx context.Context, marketID string, fromTime time.Time) ([]MarketBalance, error)
-	GetBalancesForAllMarkets(ctx context.Context, fromTime time.Time) (map[string][]MarketBalance, error)
+	GetBalancesForMarkets(
+		ctx context.Context,
+		startTime time.Time,
+		endTime time.Time,
+		marketIDs ...string,
+	) (map[string][]MarketBalance, error)
 }

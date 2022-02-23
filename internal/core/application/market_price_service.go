@@ -2,7 +2,6 @@ package application
 
 import (
 	"context"
-	"strconv"
 	"tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -17,8 +16,8 @@ type MarketPriceService interface {
 	//if marketID is passed method will return data for all market's, otherwise only for provided one
 	GetPrices(
 		ctx context.Context,
-		marketID int,
-		fromTime string,
+		timeRange TimeRange,
+		marketIDs ...string,
 	) (*MarketsPrices, error)
 }
 
@@ -52,64 +51,39 @@ func (m *marketPriceService) InsertPrice(
 
 func (m *marketPriceService) GetPrices(
 	ctx context.Context,
-	marketID int,
-	fromTime string,
+	timeRange TimeRange,
+	marketIDs ...string,
 ) (*MarketsPrices, error) {
-	result := make(map[int][]Price)
+	result := make(map[string][]Price)
 
-	if err := validateTimeFormat(fromTime); err != nil {
+	startTime, endTime, err := timeRange.getStartAndEndTime(time.Now())
+	if err != nil {
 		return nil, err
 	}
 
-	tm, _ := time.Parse(time.RFC3339, fromTime)
+	marketsPrices, err := m.marketPriceRepository.GetPricesForMarkets(
+		ctx,
+		startTime,
+		endTime,
+		marketIDs...,
+	)
+	if err != nil {
+		return nil, err
+	}
 
-	if marketID > 0 {
-		marketPrices, err := m.marketPriceRepository.GetPricesForMarket(ctx, strconv.Itoa(marketID), tm)
-		if err != nil {
-			return nil, err
-		}
+	for k, v := range marketsPrices {
 		prices := make([]Price, 0)
-		for _, v := range marketPrices {
+		for _, v1 := range v {
 			prices = append(prices, Price{
-				BasePrice:  v.BasePrice,
-				BaseAsset:  v.BaseAsset,
-				QuotePrice: v.QuotePrice,
-				QuoteAsset: v.QuoteAsset,
-				Time:       v.Time,
+				BasePrice:  v1.BasePrice,
+				BaseAsset:  v1.BaseAsset,
+				QuotePrice: v1.QuotePrice,
+				QuoteAsset: v1.QuoteAsset,
+				Time:       v1.Time,
 			})
-
-			marketID, err := strconv.Atoi(v.MarketID)
-			if err != nil {
-				return nil, err
-			}
-
-			result[marketID] = prices
-		}
-	} else {
-		marketsPrices, err := m.marketPriceRepository.GetPricesForAllMarkets(ctx, tm)
-		if err != nil {
-			return nil, err
 		}
 
-		for k, v := range marketsPrices {
-			prices := make([]Price, 0)
-			for _, v1 := range v {
-				prices = append(prices, Price{
-					BasePrice:  v1.BasePrice,
-					BaseAsset:  v1.BaseAsset,
-					QuotePrice: v1.QuotePrice,
-					QuoteAsset: v1.QuoteAsset,
-					Time:       v1.Time,
-				})
-			}
-
-			marketID, err := strconv.Atoi(k)
-			if err != nil {
-				return nil, err
-			}
-
-			result[marketID] = prices
-		}
+		result[k] = prices
 	}
 
 	return &MarketsPrices{

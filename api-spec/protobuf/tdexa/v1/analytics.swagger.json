@@ -111,6 +111,19 @@
         }
       }
     },
+    "v1CustomPeriod": {
+      "type": "object",
+      "properties": {
+        "startDate": {
+          "type": "string",
+          "title": "start_date in RFC3339 format"
+        },
+        "endDate": {
+          "type": "string",
+          "title": "end_date in RFC3339 format"
+        }
+      }
+    },
     "v1MarketBalance": {
       "type": "object",
       "properties": {
@@ -197,14 +210,16 @@
     "v1MarketsBalancesRequest": {
       "type": "object",
       "properties": {
-        "fromTime": {
-          "type": "string",
-          "title": "from_time fetch balances from time in past"
+        "timeRange": {
+          "$ref": "#/definitions/v1TimeRange",
+          "title": "time_range fetch balances from time range"
         },
-        "marketId": {
-          "type": "integer",
-          "format": "int32",
-          "title": "fetch balances for specific market, if not provided all market's balances will be returned"
+        "marketIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "fetch balances for specific one or more market's"
         }
       }
     },
@@ -223,13 +238,15 @@
     "v1MarketsPricesRequest": {
       "type": "object",
       "properties": {
-        "fromTime": {
-          "type": "string",
-          "title": "from_time fetch prices from time in past"
+        "timeRange": {
+          "$ref": "#/definitions/v1TimeRange",
+          "title": "time_range fetch prices for time range"
         },
-        "marketId": {
-          "type": "integer",
-          "format": "int32",
+        "marketIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
           "title": "fetch prices for specific market, if not provided all market's balances will be returned"
         },
         "referenceCurrency": {
@@ -237,6 +254,33 @@
           "title": "reference fiat currency to which base and quote will be converted"
         }
       }
+    },
+    "v1PredefinedPeriod": {
+      "type": "string",
+      "enum": [
+        "NULL",
+        "LAST_HOUR",
+        "LAST_DAY",
+        "LAST_MONTH",
+        "LAST_3_MONTHS",
+        "YEAR_TO_DATE",
+        "ALL"
+      ],
+      "default": "NULL"
+    },
+    "v1TimeRange": {
+      "type": "object",
+      "properties": {
+        "predefinedPeriod": {
+          "$ref": "#/definitions/v1PredefinedPeriod",
+          "title": "predefined time_period till now"
+        },
+        "customPeriod": {
+          "$ref": "#/definitions/v1CustomPeriod",
+          "title": "granular time range"
+        }
+      },
+      "description": "TimeRange is flexible type used to determine time span for which specific\napi will fetch data, either one of predefined_period or custom_period should be provided."
     }
   }
 }

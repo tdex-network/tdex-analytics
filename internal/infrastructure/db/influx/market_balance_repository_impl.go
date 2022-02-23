@@ -2,7 +2,6 @@ package dbinflux
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"tdex-analytics/internal/core/domain"
@@ -30,18 +29,21 @@ func (i *influxDbService) InsertBalance(
 	return nil
 }
 
-func (i *influxDbService) GetBalancesForMarket(
+func (i *influxDbService) GetBalancesForMarkets(
 	ctx context.Context,
-	marketID string,
-	fromTime time.Time,
-) ([]domain.MarketBalance, error) {
+	startTime time.Time,
+	endTime time.Time,
+	marketIDs ...string,
+) (map[string][]domain.MarketBalance, error) {
+	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"from(bucket:\"%v\")|> range(start: %s)|> filter(fn: (r) => r._measurement == \"%v\" and r.market_id==\"%v\")|> sort()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => r._measurement == \"%v\" %v)|> sort() |> schema.fieldsAsCols()",
 		i.analyticsBucket,
-		fromTime.Format(time.RFC3339),
+		startTime.Format(time.RFC3339),
+		endTime.Format(time.RFC3339),
 		MarketBalanceTable,
-		marketID,
+		marketIDsFilter,
 	)
 	result, err := queryAPI.Query(
 		ctx,
@@ -51,121 +53,40 @@ func (i *influxDbService) GetBalancesForMarket(
 		return nil, err
 	}
 
-	resultPoints := make(map[time.Time]domain.MarketBalance)
+	response := make(map[string][]domain.MarketBalance)
 	for result.Next() {
-		val, ok := resultPoints[result.Record().Time()]
+		marketID := result.Record().ValueByKey(marketTag).(string)
+		marketBalance := domain.MarketBalance{
+			MarketID:     result.Record().ValueByKey(marketTag).(string),
+			BaseBalance:  int(result.Record().ValueByKey(baseBalance).(int64)),
+			BaseAsset:    result.Record().ValueByKey(baseAsset).(string),
+			QuoteBalance: int(result.Record().ValueByKey(baseBalance).(int64)),
+			QuoteAsset:   result.Record().ValueByKey(quoteAsset).(string),
+			Time:         result.Record().Time(),
+		}
+		val, ok := response[marketID]
 		if !ok {
-			val = domain.MarketBalance{
-				MarketID: result.Record().ValueByKey(marketTag).(string),
-			}
+			balances := make([]domain.MarketBalance, 0)
+			balances = append(balances, marketBalance)
+			response[marketID] = balances
+		} else {
+			val = append(val, marketBalance)
+			response[marketID] = val
 		}
-
-		switch field := result.Record().Field(); field {
-		case baseAsset:
-			val.BaseAsset = result.Record().Value().(string)
-		case baseBalance:
-			val.BaseBalance = int(result.Record().Value().(int64))
-		case quoteAsset:
-			val.QuoteAsset = result.Record().Value().(string)
-		case quoteBalance:
-			val.QuoteBalance = int(result.Record().Value().(int64))
-		default:
-			return nil, errors.New(fmt.Sprintf("unrecognized field %v", field))
-		}
-
-		resultPoints[result.Record().Time()] = val
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	response := make([]domain.MarketBalance, 0)
-	for k, v := range resultPoints {
-		response = append(response, domain.MarketBalance{
-			MarketID:     v.MarketID,
-			BaseBalance:  v.BaseBalance,
-			BaseAsset:    v.BaseAsset,
-			QuoteBalance: v.QuoteBalance,
-			QuoteAsset:   v.QuoteAsset,
-			Time:         k,
-		})
 	}
 
 	return response, nil
 }
 
-func (i *influxDbService) GetBalancesForAllMarkets(
-	ctx context.Context,
-	fromTime time.Time,
-) (map[string][]domain.MarketBalance, error) {
-	queryAPI := i.client.QueryAPI(i.org)
-	query := fmt.Sprintf(
-		"from(bucket:\"%v\")|> range(start: %s)|> filter(fn: (r) => r._measurement == \"%v\")|> sort()",
-		i.analyticsBucket,
-		fromTime.Format(time.RFC3339),
-		MarketBalanceTable,
-	)
-	result, err := queryAPI.Query(
-		ctx,
-		query,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	resultPoints := make(map[time.Time]domain.MarketBalance)
-	for result.Next() {
-		val, ok := resultPoints[result.Record().Time()]
-		if !ok {
-			val = domain.MarketBalance{
-				MarketID: result.Record().ValueByKey(marketTag).(string),
-			}
-		}
-
-		switch field := result.Record().Field(); field {
-		case baseAsset:
-			val.BaseAsset = result.Record().Value().(string)
-		case baseBalance:
-			val.BaseBalance = int(result.Record().Value().(int64))
-		case quoteAsset:
-			val.QuoteAsset = result.Record().Value().(string)
-		case quoteBalance:
-			val.QuoteBalance = int(result.Record().Value().(int64))
-		default:
-			return nil, errors.New(fmt.Sprintf("unrecognized field %v", field))
-		}
-
-		resultPoints[result.Record().Time()] = val
-	}
-	if result.Err() != nil {
-		return nil, result.Err()
-	}
-
-	response := make(map[string][]domain.MarketBalance)
-	for k, v := range resultPoints {
-		if v1, ok := response[v.MarketID]; !ok {
-			balances := make([]domain.MarketBalance, 0)
-			balances = append(balances, domain.MarketBalance{
-				MarketID:     v.MarketID,
-				BaseBalance:  v.BaseBalance,
-				BaseAsset:    v.BaseAsset,
-				QuoteBalance: v.QuoteBalance,
-				QuoteAsset:   v.QuoteAsset,
-				Time:         k,
-			})
-			response[v.MarketID] = balances
+func createMarkedIDsFluxQueryFilter(marketIDs []string) string {
+	query := ""
+	for i, v := range marketIDs {
+		if i == 0 {
+			query = fmt.Sprintf("and r.market_id==\"%v\"", v)
 		} else {
-			v1 = append(v1, domain.MarketBalance{
-				MarketID:     v.MarketID,
-				BaseBalance:  v.BaseBalance,
-				BaseAsset:    v.BaseAsset,
-				QuoteBalance: v.QuoteBalance,
-				QuoteAsset:   v.QuoteAsset,
-				Time:         k,
-			})
-			response[v.MarketID] = v1
+			query = fmt.Sprintf("%v or r.market_id==\"%v\"", query, v)
 		}
 	}
 
-	return response, nil
+	return query
 }

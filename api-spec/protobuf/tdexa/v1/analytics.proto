@@ -27,12 +27,12 @@ service Analytics {
 message MarketsBalancesRequest {
   // time_range fetch balances from time range
   TimeRange time_range = 1;
-  // fetch balances for specific one or more market's
-  repeated int32 market_id = 2;
+  // fetch balances for specific one or more market's, if no market_id is passed balances will be fetched for all
+  repeated string market_ids = 2;
 }
 message MarketsBalancesReply {
   // returns map of market_id and its balances sorted by time ASC
-  map<int32, MarketBalances> markets_balances = 1;
+  map<string, MarketBalances> markets_balances = 1;
 }
 message MarketBalances {
   repeated MarketBalance market_balance = 1;
@@ -49,14 +49,14 @@ message MarketBalance {
 message MarketsPricesRequest {
   // time_range fetch prices for time range
   TimeRange time_range = 1;
-  // fetch prices for specific market, if not provided all market's balances will be returned
-  int32 market_id = 2;
+  // fetch prices for specific one or more market's, if no market_id is passed balances will be fetched for all
+  repeated string market_ids = 2;
   // reference fiat currency to which base and quote will be converted
   string reference_currency = 3;
 }
 message MarketsPricesReply {
   // returns map of market_id and its prices sorted by time ASC
-  map<int32, MarketPrices> markets_prices = 1;
+  map<string, MarketPrices> markets_prices = 1;
 }
 message MarketPrices {
   // returns list of Market's and their prices
@@ -92,10 +92,11 @@ message CustomPeriod {
 }
 
 enum PredefinedPeriod {
-  LAST_HOUR = 0;
-  LAST_DAY = 1;
-  LAST_MONTH = 2;
-  LAST_3_MONTHS = 3;
-  YEAR_TO_DATE = 4;
-  ALL = 5;
+  NULL = 0;
+  LAST_HOUR = 1;
+  LAST_DAY = 2;
+  LAST_MONTH = 3;
+  LAST_3_MONTHS = 4;
+  YEAR_TO_DATE = 5;
+  ALL = 6;
 }

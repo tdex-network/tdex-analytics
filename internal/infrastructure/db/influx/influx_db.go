@@ -36,7 +36,7 @@ type influxDbService struct {
 	client          influxdb2.Client
 }
 
-func NewInfluxDb(config Config) (Service, error) {
+func New(config Config) (Service, error) {
 	//TODO check if there should be one writeApi and if it should be sync or async
 	client := influxdb2.NewClient(config.DbUrl, config.AuthToken)
 

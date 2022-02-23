@@ -1,4 +1,6 @@
 #!/bin/bash
+# generate prices and balances test data
+go run ./script/data_generator.go
 # create config file
 docker run --rm influxdb:2.1.1 influxd print-config > ./influxdb-conf/config.yml
 # create the container
@@ -25,6 +27,7 @@ docker exec influxdb influx setup \
 # get the token
 export TDEXA_INFLUXDB_TOKEN=$(docker exec influxdb influx auth list | awk -v username="$INFLUXDB_USERNAME" '$5 ~ username {print $4 " "}')
 echo "InfluxDB token: ${TDEXA_INFLUXDB_TOKEN}"
+echo "TDEXA_INFLUXDB_TOKEN=${TDEXA_INFLUXDB_TOKEN}" >> $GITHUB_ENV
+# insert data
 docker exec influxdb influx write -b analytics -o tdex-network -f balances.txt
 docker exec influxdb influx write -b analytics -o tdex-network -f prices.txt
-go run ./cmd/tdexad/main.go
