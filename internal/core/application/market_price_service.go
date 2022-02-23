@@ -2,8 +2,16 @@ package application
 
 import (
 	"context"
+	"github.com/robfig/cron/v3"
+	log "github.com/sirupsen/logrus"
+	"strconv"
 	"tdex-analytics/internal/core/domain"
+	"tdex-analytics/internal/core/port"
 	"time"
+)
+
+const (
+	fetchPriceCronExpression = ""
 )
 
 type MarketPriceService interface {
@@ -19,17 +27,27 @@ type MarketPriceService interface {
 		timeRange TimeRange,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
+	// StartFetchingPrices starts cron job that will periodically fetch and store prices for all markets
+	StartFetchingPrices() error
 }
 
 type marketPriceService struct {
 	marketPriceRepository domain.MarketPriceRepository
+	marketRepository      domain.MarketRepository
+	externalFetcher       port.MarketDataFetcher
+	cronSvc               *cron.Cron
 }
 
 func NewMarketPriceService(
 	marketPriceRepository domain.MarketPriceRepository,
+	marketRepository domain.MarketRepository,
+	externalFetcher port.MarketDataFetcher,
 ) MarketPriceService {
 	return &marketPriceService{
 		marketPriceRepository: marketPriceRepository,
+		cronSvc:               cron.New(),
+		marketRepository:      marketRepository,
+		externalFetcher:       externalFetcher,
 	}
 }
 
@@ -89,4 +107,54 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func (m *marketPriceService) StartFetchingPrices() error {
+	if _, err := m.cronSvc.AddJob(
+		fetchPriceCronExpression,
+		cron.FuncJob(m.FetchPricesForAllMarkets),
+	); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *marketPriceService) FetchPricesForAllMarkets() {
+	ctx := context.Background()
+
+	markets, err := m.marketRepository.GetAllMarkets(ctx)
+	if err != nil {
+		log.Errorf("FetchPricesForAllMarkets -> GetAllMarkets: %v", err)
+		return
+	}
+
+	for _, v := range markets {
+		go func(market domain.Market) {
+			m.FetchAndInsertPrice(ctx, market)
+		}(v)
+	}
+}
+
+func (m *marketPriceService) FetchAndInsertPrice(
+	ctx context.Context,
+	market domain.Market,
+) {
+	price, err := m.externalFetcher.FetchPrice(ctx, market)
+	if err != nil {
+		log.Errorf("FetchAndInsertPrice -> FetchPrice: %v", err)
+		return
+	}
+
+	if err := m.InsertPrice(ctx, MarketPrice{
+		MarketID:   strconv.Itoa(market.ID),
+		BasePrice:  price.BasePrice,
+		BaseAsset:  market.BaseAsset,
+		QuotePrice: price.QuotePrice,
+		QuoteAsset: market.QuoteAsset,
+		Time:       time.Now(),
+	}); err != nil {
+		log.Errorf("FetchAndInsertPrice -> InsertPrice: %v", err)
+		return
+	}
 }
