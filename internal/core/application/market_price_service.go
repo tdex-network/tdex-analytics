@@ -6,12 +6,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/core/port"
+	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
 )
 
 const (
-	fetchPriceCronExpression = ""
+	fetchPriceCronExpression = "@every 5m"
 )
 
 type MarketPriceService interface {
@@ -27,27 +27,27 @@ type MarketPriceService interface {
 		timeRange TimeRange,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
-	// StartFetchingPrices starts cron job that will periodically fetch and store prices for all markets
-	StartFetchingPrices() error
+	// StartFetchingPricesJob starts cron job that will periodically fetch and store prices for all markets
+	StartFetchingPricesJob() error
 }
 
 type marketPriceService struct {
 	marketPriceRepository domain.MarketPriceRepository
 	marketRepository      domain.MarketRepository
-	externalFetcher       port.MarketDataFetcher
+	tdexMarketLoaderSvc   tdexmarketloader.Service
 	cronSvc               *cron.Cron
 }
 
 func NewMarketPriceService(
 	marketPriceRepository domain.MarketPriceRepository,
 	marketRepository domain.MarketRepository,
-	externalFetcher port.MarketDataFetcher,
+	tdexMarketLoaderSvc tdexmarketloader.Service,
 ) MarketPriceService {
 	return &marketPriceService{
 		marketPriceRepository: marketPriceRepository,
 		cronSvc:               cron.New(),
 		marketRepository:      marketRepository,
-		externalFetcher:       externalFetcher,
+		tdexMarketLoaderSvc:   tdexMarketLoaderSvc,
 	}
 }
 
@@ -109,7 +109,7 @@ func (m *marketPriceService) GetPrices(
 	}, nil
 }
 
-func (m *marketPriceService) StartFetchingPrices() error {
+func (m *marketPriceService) StartFetchingPricesJob() error {
 	if _, err := m.cronSvc.AddJob(
 		fetchPriceCronExpression,
 		cron.FuncJob(m.FetchPricesForAllMarkets),
@@ -117,10 +117,13 @@ func (m *marketPriceService) StartFetchingPrices() error {
 		return err
 	}
 
+	m.cronSvc.Start()
+
 	return nil
 }
 
 func (m *marketPriceService) FetchPricesForAllMarkets() {
+	log.Infof("job FetchPricesForAllMarkets at: %v", time.Now())
 	ctx := context.Background()
 
 	markets, err := m.marketRepository.GetAllMarkets(ctx)
@@ -140,7 +143,14 @@ func (m *marketPriceService) FetchAndInsertPrice(
 	ctx context.Context,
 	market domain.Market,
 ) {
-	price, err := m.externalFetcher.FetchPrice(ctx, market)
+	price, err := m.tdexMarketLoaderSvc.FetchPrice(
+		ctx,
+		tdexmarketloader.Market{
+			Url:        market.Url,
+			QuoteAsset: market.QuoteAsset,
+			BaseAsset:  market.BaseAsset,
+		},
+	)
 	if err != nil {
 		log.Errorf("FetchAndInsertPrice -> FetchPrice: %v", err)
 		return

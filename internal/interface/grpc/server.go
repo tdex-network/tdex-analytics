@@ -28,6 +28,7 @@ type server struct {
 	serverPort       string
 	marketBalanceSvc application.MarketBalanceService
 	marketPriceSvc   application.MarketPriceService
+	marketsLoaderSvc application.MarketsLoaderService
 	opts             serverOptions
 }
 
@@ -35,8 +36,21 @@ func NewServer(
 	serverPort string,
 	marketBalanceSvc application.MarketBalanceService,
 	marketPriceSvc application.MarketPriceService,
+	marketsLoaderSvc application.MarketsLoaderService,
 	opts ...ServerOption,
 ) (Server, error) {
+	if err := marketsLoaderSvc.StartFetchingMarketsJob(); err != nil {
+		return nil, err
+	}
+
+	if err := marketPriceSvc.StartFetchingPricesJob(); err != nil {
+		return nil, err
+	}
+
+	if err := marketBalanceSvc.StartFetchingBalancesJob(); err != nil {
+		return nil, err
+	}
+
 	defaultOpts := defaultServerOptions(serverPort)
 	for _, o := range opts {
 		if err := o.apply(&defaultOpts); err != nil {
@@ -48,6 +62,7 @@ func NewServer(
 		serverPort:       serverPort,
 		marketBalanceSvc: marketBalanceSvc,
 		marketPriceSvc:   marketPriceSvc,
+		marketsLoaderSvc: marketsLoaderSvc,
 		opts:             defaultOpts,
 	}, nil
 }

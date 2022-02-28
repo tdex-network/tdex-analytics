@@ -12,6 +12,7 @@ import (
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
 	dbpg "tdex-analytics/internal/infrastructure/db/pg"
 	tdexagrpc "tdex-analytics/internal/interface/grpc"
+	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
 func main() {
@@ -35,11 +36,26 @@ func main() {
 		DbInsecure:         config.GetBool(config.DbInsecure),
 		AwsRegion:          config.GetString(config.AwsRegion),
 	})
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 
-	//TODO external fetcher impl
+	tdexMarketLoaderSvc := tdexmarketloader.NewService(config.GetString(config.TorProxyUrl))
 
-	marketBalanceSvc := application.NewMarketBalanceService(influxDbSvc, marketRepository, nil)
-	marketPriceSvc := application.NewMarketPriceService(influxDbSvc, marketRepository, nil)
+	marketLoaderSvc := application.NewMarketsLoaderService(
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketBalanceSvc := application.NewMarketBalanceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketPriceSvc := application.NewMarketPriceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
 
@@ -47,6 +63,7 @@ func main() {
 		strconv.Itoa(config.GetInt(config.GrpcServerPortKey)),
 		marketBalanceSvc,
 		marketPriceSvc,
+		marketLoaderSvc,
 		opts,
 	)
 

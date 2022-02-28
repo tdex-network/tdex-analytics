@@ -8,7 +8,7 @@ import (
 )
 
 const getAllMarkets = `-- name: GetAllMarkets :many
-SELECT market_id, account_index, provider_name, url, credentials, base_asset, quote_asset FROM market
+SELECT market_id, provider_name, url, base_asset, quote_asset FROM market
 `
 
 func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
@@ -22,10 +22,8 @@ func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
 		var i Market
 		if err := rows.Scan(
 			&i.MarketID,
-			&i.AccountIndex,
 			&i.ProviderName,
 			&i.Url,
-			&i.Credentials,
 			&i.BaseAsset,
 			&i.QuoteAsset,
 		); err != nil {
@@ -44,37 +42,31 @@ func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
 
 const insertMarket = `-- name: InsertMarket :one
 INSERT INTO market (
-    account_index, provider_name,url,credentials,base_asset,quote_asset) VALUES (
-             $1, $2, $3, $4, $5, $6
+    provider_name,url,base_asset,quote_asset) VALUES (
+             $1, $2, $3, $4
     )
-    RETURNING market_id, account_index, provider_name, url, credentials, base_asset, quote_asset
+    RETURNING market_id, provider_name, url, base_asset, quote_asset
 `
 
 type InsertMarketParams struct {
-	AccountIndex int32
 	ProviderName string
 	Url          string
-	Credentials  string
 	BaseAsset    string
 	QuoteAsset   string
 }
 
 func (q *Queries) InsertMarket(ctx context.Context, arg InsertMarketParams) (Market, error) {
 	row := q.db.QueryRowContext(ctx, insertMarket,
-		arg.AccountIndex,
 		arg.ProviderName,
 		arg.Url,
-		arg.Credentials,
 		arg.BaseAsset,
 		arg.QuoteAsset,
 	)
 	var i Market
 	err := row.Scan(
 		&i.MarketID,
-		&i.AccountIndex,
 		&i.ProviderName,
 		&i.Url,
-		&i.Credentials,
 		&i.BaseAsset,
 		&i.QuoteAsset,
 	)

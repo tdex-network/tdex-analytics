@@ -2,14 +2,14 @@
 
 package queries
 
-import ()
+import (
+	"database/sql"
+)
 
 type Market struct {
-	MarketID     int32
-	AccountIndex int32
+	MarketID     sql.NullInt32
 	ProviderName string
 	Url          string
-	Credentials  string
 	BaseAsset    string
 	QuoteAsset   string
 }

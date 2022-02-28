@@ -2,8 +2,13 @@ package dbpg
 
 import (
 	"context"
+	"github.com/lib/pq"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
+)
+
+const (
+	uniqueViolation = "23505"
 )
 
 func (p *postgresDbService) InsertMarket(
@@ -11,14 +16,16 @@ func (p *postgresDbService) InsertMarket(
 	market domain.Market,
 ) error {
 	if _, err := p.querier.InsertMarket(ctx, queries.InsertMarketParams{
-		AccountIndex: int32(market.AccountIndex),
 		ProviderName: market.ProviderName,
 		Url:          market.Url,
-		Credentials:  market.Credentials,
 		BaseAsset:    market.BaseAsset,
 		QuoteAsset:   market.QuoteAsset,
 	}); err != nil {
-		return err
+		if pqErr := err.(*pq.Error); pqErr != nil {
+			if pqErr.Code == uniqueViolation {
+				return nil
+			}
+		}
 	}
 
 	return nil
@@ -35,11 +42,9 @@ func (p *postgresDbService) GetAllMarkets(
 	res := make([]domain.Market, 0, len(markets))
 	for _, v := range markets {
 		res = append(res, domain.Market{
-			ID:           int(v.MarketID),
-			AccountIndex: int(v.AccountIndex),
+			ID:           int(v.MarketID.Int32),
 			ProviderName: v.ProviderName,
 			Url:          v.Url,
-			Credentials:  v.Credentials,
 			BaseAsset:    v.BaseAsset,
 			QuoteAsset:   v.QuoteAsset,
 		})

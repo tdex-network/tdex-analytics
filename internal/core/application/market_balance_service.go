@@ -7,12 +7,12 @@ import (
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/core/port"
+	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
 )
 
 const (
-	fetchBalanceCronExpression = ""
+	fetchBalanceCronExpression = "@every 5m"
 )
 
 var (
@@ -32,28 +32,28 @@ type MarketBalanceService interface {
 		timeRange TimeRange,
 		marketIDs ...string,
 	) (*MarketsBalances, error)
-	// StartFetchingBalances starts cron job that will periodically fetch and store balances for all markets
-	StartFetchingBalances() error
+	// StartFetchingBalancesJob starts cron job that will periodically fetch and store balances for all markets
+	StartFetchingBalancesJob() error
 }
 
 type marketBalanceService struct {
 	marketBalanceRepository domain.MarketBalanceRepository
 	marketRepository        domain.MarketRepository
-	externalFetcher         port.MarketDataFetcher
+	tdexMarketLoaderSvc     tdexmarketloader.Service
 	cronSvc                 *cron.Cron
 }
 
 func NewMarketBalanceService(
 	marketBalanceRepository domain.MarketBalanceRepository,
 	marketRepository domain.MarketRepository,
-	externalFetcher port.MarketDataFetcher,
+	tdexMarketLoaderSvc tdexmarketloader.Service,
 ) MarketBalanceService {
 
 	return &marketBalanceService{
 		marketBalanceRepository: marketBalanceRepository,
 		cronSvc:                 cron.New(),
 		marketRepository:        marketRepository,
-		externalFetcher:         externalFetcher,
+		tdexMarketLoaderSvc:     tdexMarketLoaderSvc,
 	}
 }
 
@@ -115,7 +115,7 @@ func (m *marketBalanceService) GetBalances(
 	}, nil
 }
 
-func (m *marketBalanceService) StartFetchingBalances() error {
+func (m *marketBalanceService) StartFetchingBalancesJob() error {
 	if _, err := m.cronSvc.AddJob(
 		fetchBalanceCronExpression,
 		cron.FuncJob(m.FetchBalancesForAllMarkets),
@@ -123,10 +123,13 @@ func (m *marketBalanceService) StartFetchingBalances() error {
 		return err
 	}
 
+	m.cronSvc.Start()
+
 	return nil
 }
 
 func (m *marketBalanceService) FetchBalancesForAllMarkets() {
+	log.Infof("job FetchBalancesForAllMarkets at: %v", time.Now())
 	ctx := context.Background()
 
 	markets, err := m.marketRepository.GetAllMarkets(ctx)
@@ -146,7 +149,14 @@ func (m *marketBalanceService) FetchAndInsertBalance(
 	ctx context.Context,
 	market domain.Market,
 ) {
-	balance, err := m.externalFetcher.FetchBalance(ctx, market)
+	balance, err := m.tdexMarketLoaderSvc.FetchBalance(
+		ctx,
+		tdexmarketloader.Market{
+			Url:        market.Url,
+			QuoteAsset: market.QuoteAsset,
+			BaseAsset:  market.BaseAsset,
+		},
+	)
 	if err != nil {
 		log.Errorf("FetchAndInsertBalance -> FetchBalance: %v", err)
 		return

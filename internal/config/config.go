@@ -21,6 +21,7 @@ const (
 	DbMigrationPath         = "DB_MIGRATION_PATH"
 	DbInsecure              = "DB_INSECURE"
 	AwsRegion               = "AWSREGION"
+	TorProxyUrl             = "TOR_PROXY_URL"
 )
 
 var vip *viper.Viper
@@ -40,10 +41,11 @@ func init() {
 	vip.SetDefault(DbPassKey, "secret")
 	vip.SetDefault(DbHostKey, "127.0.0.1")
 	vip.SetDefault(DbPortKey, 5432)
-	vip.SetDefault(DbNameKey, "tdexa-test")
+	vip.SetDefault(DbNameKey, "tdexa")
 	vip.SetDefault(DbMigrationPath, "file://internal/infrastructure/db/pg/migrations")
 	vip.SetDefault(DbInsecure, true)
 	vip.SetDefault(AwsRegion, "eu-central-1")
+	vip.SetDefault(TorProxyUrl, "127.0.0.1:9050")
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")
