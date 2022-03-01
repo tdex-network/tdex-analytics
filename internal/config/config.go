@@ -1,9 +1,8 @@
 package config
 
 import (
-	"github.com/btcsuite/btcutil"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"log"
 )
 
 const (
@@ -22,10 +21,11 @@ const (
 	DbInsecure              = "DB_INSECURE"
 	AwsRegion               = "AWSREGION"
 	TorProxyUrl             = "TOR_PROXY_URL"
+	RegistryUrl             = "REGISTRY_URL"
+	LogLevelKey             = "LOG_LEVEL"
 )
 
 var vip *viper.Viper
-var defaultDataDir = btcutil.AppDataDir("tdexad", false)
 
 func init() {
 	vip = viper.New()
@@ -46,12 +46,14 @@ func init() {
 	vip.SetDefault(DbInsecure, true)
 	vip.SetDefault(AwsRegion, "eu-central-1")
 	vip.SetDefault(TorProxyUrl, "127.0.0.1:9050")
+	vip.SetDefault(RegistryUrl, "https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json")
+	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")
 	}
 
-	//TODO influxDB health check
+	log.SetLevel(log.Level(GetInt(LogLevelKey)))
 }
 
 func GetBool(key string) bool {

@@ -19,7 +19,6 @@ import (
 )
 
 const (
-	registryUrl   = "https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json"
 	onionUrlRegex = "onion"
 	httpRegex     = "http://"
 	httpsRegex    = "https://"
@@ -33,11 +32,13 @@ type Service interface {
 
 type tdexMarketLoaderService struct {
 	torProxyUrl string
+	registryUrl string
 }
 
-func NewService(torProxyUrl string) Service {
+func NewService(torProxyUrl, registryUrl string) Service {
 	return &tdexMarketLoaderService{
 		torProxyUrl: torProxyUrl,
+		registryUrl: registryUrl,
 	}
 }
 
@@ -131,7 +132,7 @@ func (t *tdexMarketLoaderService) FetchPrice(
 }
 
 func (t *tdexMarketLoaderService) fetchLiquidityProviders() ([]LiquidityProvider, error) {
-	resp, err := http.Get(registryUrl)
+	resp, err := http.Get(t.registryUrl)
 	if err != nil {
 		return nil, err
 	}

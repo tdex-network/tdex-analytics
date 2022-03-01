@@ -4,5 +4,5 @@ CREATE TABLE market (
     url          varchar(264) NOT NULL,
     base_asset    varchar(264) NOT NULL,
     quote_asset   varchar(264) NOT NULL,
-    PRIMARY KEY(provider_name, base_asset, quote_asset)
+    PRIMARY KEY(url, base_asset, quote_asset)
 );

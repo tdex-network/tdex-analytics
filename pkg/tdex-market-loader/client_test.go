@@ -7,7 +7,10 @@ import (
 )
 
 func TestGetProvidersAndMarkets(t *testing.T) {
-	tdexMarketLoaderSvc := NewService("127.0.0.1:9050")
+	tdexMarketLoaderSvc := NewService(
+		"127.0.0.1:9050",
+		"https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json",
+	)
 	liquidityProviders, err := tdexMarketLoaderSvc.FetchProvidersMarkets(context.Background())
 	if err != nil {
 		t.Fatal(err)

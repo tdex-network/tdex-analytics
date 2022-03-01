@@ -40,7 +40,10 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	tdexMarketLoaderSvc := tdexmarketloader.NewService(config.GetString(config.TorProxyUrl))
+	tdexMarketLoaderSvc := tdexmarketloader.NewService(
+		config.GetString(config.TorProxyUrl),
+		config.GetString(config.RegistryUrl),
+	)
 
 	marketLoaderSvc := application.NewMarketsLoaderService(
 		marketRepository,
