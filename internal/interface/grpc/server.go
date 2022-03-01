@@ -13,6 +13,7 @@ import (
 	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
 	"tdex-analytics/internal/core/application"
 	grpchandler "tdex-analytics/internal/interface/grpc/handler"
+	"tdex-analytics/internal/interface/grpc/interceptor"
 	"time"
 )
 
@@ -142,7 +143,12 @@ func (s *server) Start(ctx context.Context, stop context.CancelFunc) <-chan erro
 
 func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 	analyticsHandler := grpchandler.NewAnalyticsHandler(s.marketBalanceSvc, s.marketPriceSvc)
-	tdexaGrpcServer := grpc.NewServer()
+	chainInterceptorSvc, err := interceptor.NewService()
+	if err != nil {
+		return nil, err
+	}
+	opts := chainInterceptorSvc.CreateServerOpts()
+	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
 
 	return tdexaGrpcServer, nil

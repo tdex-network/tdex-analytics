@@ -6,12 +6,15 @@ import (
 	"os"
 	"tdex-analytics/internal/core/application"
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
+	dbpg "tdex-analytics/internal/infrastructure/db/pg"
+	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
 var (
-	dbSvc             dbinflux.Service
+	influxDbSvc       dbinflux.Service
 	marketBalanceSvc  application.MarketBalanceService
 	marketPriceSvc    application.MarketPriceService
+	marketLoaderSvc   application.MarketsLoaderService
 	ctx               = context.Background()
 	nilPp             = application.NIL
 	lastHourPp        = application.LastHour
@@ -42,14 +45,45 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		a.FailNow(err.Error())
 	}
 
-	dbSvc = db
+	influxDbSvc = db
 
-	marketBalanceSvc = application.NewMarketBalanceService(dbSvc)
-	marketPriceSvc = application.NewMarketPriceService(dbSvc)
+	marketRepository, err := dbpg.New(dbpg.DbConfig{
+		DbUser:     "root",
+		DbPassword: "secret",
+		DbHost:     "127.0.0.1",
+		DbPort:     5432,
+		DbName:     "tdexa-test",
+		MigrationSourceURL: "file://../.." +
+			"/internal/infrastructure/db/pg/migrations",
+		DbInsecure: true,
+	})
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+
+	tdexMarketLoaderSvc := tdexmarketloader.NewService(
+		"127.0.0.1:9050",
+		"https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json",
+	)
+
+	marketLoaderSvc = application.NewMarketsLoaderService(
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketBalanceSvc = application.NewMarketBalanceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketPriceSvc = application.NewMarketPriceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
 }
 
 func (a *AppSvcTestSuit) TearDownSuite() {
-	dbSvc.Close()
+	influxDbSvc.Close()
 }
 
 func (a *AppSvcTestSuit) BeforeTest(suiteName, testName string) {}

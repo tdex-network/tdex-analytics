@@ -38,5 +38,8 @@ jobs:
       - name: Setup Postgres Db
         run: make pgcreatetestdb
 
+      - name: Setup client Tor proxy
+        run: make tor
+
       - name: Run tests
         run: TDEXA_INFLUXDB_TOKEN=${TDEXA_INFLUXDB_TOKEN} make testall

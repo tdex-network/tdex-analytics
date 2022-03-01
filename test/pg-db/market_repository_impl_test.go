@@ -7,10 +7,8 @@ import (
 
 func (s *PgDbTestSuite) TestInsertAndFetchMarket() {
 	if err := pgDbSvc.InsertMarket(context.Background(), domain.Market{
-		AccountIndex: 1,
 		ProviderName: "test1",
 		Url:          "test1",
-		Credentials:  "test1",
 		BaseAsset:    "test1",
 		QuoteAsset:   "test1",
 	}); err != nil {
@@ -18,10 +16,8 @@ func (s *PgDbTestSuite) TestInsertAndFetchMarket() {
 	}
 
 	if err := pgDbSvc.InsertMarket(context.Background(), domain.Market{
-		AccountIndex: 2,
 		ProviderName: "test1",
 		Url:          "test1",
-		Credentials:  "test1",
 		BaseAsset:    "test1",
 		QuoteAsset:   "test1",
 	}); err != nil {
@@ -33,5 +29,5 @@ func (s *PgDbTestSuite) TestInsertAndFetchMarket() {
 		s.FailNow(err.Error())
 	}
 
-	s.Equal(2, len(markets))
+	s.Equal(1, len(markets))
 }
