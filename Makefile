@@ -1,5 +1,5 @@
 .PHONY: build-server build-cli build proto si iid fmt vet clean ci testall \
-testinfluxdb testapp pg createdb dropdb createtestdb droptestdb pgcreatetestdb
+testinfluxdb testapp pg createdb dropdb createtestdb droptestdb pgcreatetestdb dev
 
 ## build the tdexa server
 build-server:
@@ -21,6 +21,10 @@ proto:
 ## pit: provision influxdb used for testing test
 pit:
 	INFLUXDB_BUCKET=analytics INFLUXDB_ORG=tdex-network INFLUXDB_PASSWORD=admin123 INFLUXDB_USERNAME=admin ./script/provision_influxdb_test.sh
+
+## tor: setup client tor proxy
+tor:
+	docker run -d -p 9050:9050 --name=tor -v `pwd`/tor-proxy-conf:/etc/tor connectical/tor
 
 ## fmt: Go Format
 fmt:
@@ -82,3 +86,11 @@ droptestdb:
 pgcreatetestdb:
 	chmod u+x ./script/create_testdb
 	./script/create_testdb
+
+## dev: create dev env
+dev:
+	 docker-compose --env-file .env.dev up -d
+
+## dev-down: stop dev env, remove volumes
+dev-down:
+	docker-compose --env-file .env.dev down -v

@@ -1,0 +1,80 @@
+version: '3.8'
+
+services:
+  influxdb:
+    image: influxdb:latest
+    container_name: tdexa-influxdb
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb
+      - ./influxdb-conf/config.yml:/etc/influxdb2/config.yml
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=${DOCKER_INFLUXDB_INIT_USERNAME}
+      - DOCKER_INFLUXDB_INIT_PASSWORD=${DOCKER_INFLUXDB_INIT_PASSWORD}
+      - DOCKER_INFLUXDB_INIT_ORG=${DOCKER_INFLUXDB_INIT_ORG}
+      - DOCKER_INFLUXDB_INIT_BUCKET=${DOCKER_INFLUXDB_INIT_BUCKET}
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+    networks:
+      - tdexa
+
+  pg:
+    image: postgres:latest
+    container_name: tdexa-pg
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    networks:
+      - tdexa
+
+  tor-proxy:
+    image: connectical/tor
+    container_name: tdexa-tor-proxy
+    ports:
+      - "9050:9050"
+    volumes:
+      - ./tor-proxy-conf/torrc:/etc/tor/torrc
+    networks:
+      - tdexa
+
+  tdexad:
+    container_name: tdexad
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - influxdb
+      - pg
+      - tor-proxy
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    environment:
+      TDEXA_DB_HOST: ${TDEXA_DB_HOST}
+      TDEXA_DB_PORT: ${TDEXA_DB_PORT}
+      TDEXA_DB_NAME: ${POSTGRES_DB}
+      TDEXA_DB_USER: ${POSTGRES_USER}
+      TDEXA_DB_PASS: ${POSTGRES_PASSWORD}
+      TDEXA_DB_INSECURE: ${TDEXA_DB_INSECURE}
+      TDEXA_INFLUXDB_URL: ${TDEXA_INFLUXDB_URL}
+      TDEXA_INFLUXDB_INIT_ORG: ${TDEXA_INFLUXDB_INIT_ORG}
+      TDEXA_INFLUXDB_INIT_BUCKET: ${TDEXA_INFLUXDB_INIT_BUCKET}
+      TDEXA_INFLUXDB_TOKEN: ${TDEXA_INFLUXDB_TOKEN}
+      TDEXA_TOR_PROXY_URL: ${TDEXA_TOR_PROXY_URL}
+    networks:
+      - tdexa
+
+networks:
+  tdexa:
+
+volumes:
+  influxdb-data:
+  pg-data:
