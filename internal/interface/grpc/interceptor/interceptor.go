@@ -2,6 +2,7 @@ package interceptor
 
 import (
 	middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	"google.golang.org/grpc"
 )
 
@@ -34,6 +35,14 @@ func (i *interceptorChain) CreateServerOpts() []grpc.ServerOption {
 	)
 	streamInterceptors = append(
 		streamInterceptors, i.streamErrorHandler,
+	)
+
+	//panic handler
+	unaryInterceptors = append(
+		unaryInterceptors, grpc_recovery.UnaryServerInterceptor(),
+	)
+	streamInterceptors = append(
+		streamInterceptors, grpc_recovery.StreamServerInterceptor(),
 	)
 
 	chainedUnary := middleware.WithUnaryServerChain(

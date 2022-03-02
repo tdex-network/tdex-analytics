@@ -50,7 +50,7 @@ func handleError(err error) error {
 			}
 		default:
 			result = status.Error(codes.Internal, err.Error())
-			log.Debugln(e.Error())
+			log.Errorln(e.Error())
 		}
 	}
 
