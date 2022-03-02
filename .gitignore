@@ -2,6 +2,8 @@
 
 influxdb-data
 
+pg-data
+
 bin
 
 .DS_Store

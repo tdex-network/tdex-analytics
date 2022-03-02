@@ -158,23 +158,23 @@
       "type": "object",
       "properties": {
         "basePrice": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "float",
           "title": "base is the price of one unit of the base asset, priced in quote asset assuming the trade amount was, ie. 100 unit of that asset"
         },
         "quotePrice": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "float",
           "title": "quote amount"
         },
         "baseReferencePrice": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "float",
           "title": "base price converted to reference one"
         },
         "quoteReferencePrice": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "float",
           "title": "quote price converted to reference one"
         },
         "time": {
@@ -219,7 +219,7 @@
           "items": {
             "type": "string"
           },
-          "title": "fetch balances for specific one or more market's"
+          "title": "fetch balances for specific one or more market's, if no market_id is passed balances will be fetched for all"
         }
       }
     },
@@ -247,7 +247,7 @@
           "items": {
             "type": "string"
           },
-          "title": "fetch prices for specific market, if not provided all market's balances will be returned"
+          "title": "fetch prices for specific one or more market's, if no market_id is passed balances will be fetched for all"
         },
         "referenceCurrency": {
           "type": "string",

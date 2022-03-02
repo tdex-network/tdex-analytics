@@ -10,7 +10,9 @@ import (
 	"tdex-analytics/internal/config"
 	"tdex-analytics/internal/core/application"
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
+	dbpg "tdex-analytics/internal/infrastructure/db/pg"
 	tdexagrpc "tdex-analytics/internal/interface/grpc"
+	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
 func main() {
@@ -24,8 +26,40 @@ func main() {
 		log.Fatalln(err.Error())
 	}
 
-	marketBalanceSvc := application.NewMarketBalanceService(influxDbSvc)
-	marketPriceSvc := application.NewMarketPriceService(influxDbSvc)
+	marketRepository, err := dbpg.New(dbpg.DbConfig{
+		DbUser:             config.GetString(config.DbUserKey),
+		DbPassword:         config.GetString(config.DbPassKey),
+		DbHost:             config.GetString(config.DbHostKey),
+		DbPort:             config.GetInt(config.DbPortKey),
+		DbName:             config.GetString(config.DbNameKey),
+		MigrationSourceURL: config.GetString(config.DbMigrationPath),
+		DbInsecure:         config.GetBool(config.DbInsecure),
+		AwsRegion:          config.GetString(config.AwsRegion),
+	})
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
+
+	tdexMarketLoaderSvc := tdexmarketloader.NewService(
+		config.GetString(config.TorProxyUrl),
+		config.GetString(config.RegistryUrl),
+		config.GetInt(config.PriceAmount),
+	)
+
+	marketLoaderSvc := application.NewMarketsLoaderService(
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketBalanceSvc := application.NewMarketBalanceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
+	marketPriceSvc := application.NewMarketPriceService(
+		influxDbSvc,
+		marketRepository,
+		tdexMarketLoaderSvc,
+	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
 
@@ -33,6 +67,7 @@ func main() {
 		strconv.Itoa(config.GetInt(config.GrpcServerPortKey)),
 		marketBalanceSvc,
 		marketPriceSvc,
+		marketLoaderSvc,
 		opts,
 	)
 

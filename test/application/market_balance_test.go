@@ -3,6 +3,7 @@ package influxdbtest
 import (
 	"context"
 	"errors"
+	"math"
 	"tdex-analytics/internal/core/application"
 	"time"
 )
@@ -113,7 +114,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 
 				//loaded balances are sorted in asc order, validate that first one is from yesterday
 				for _, v := range balances.MarketsBalances {
-					if v[0].Time.Day() != time.Now().Day()-1 {
+					if math.Round(v[0].Time.Sub(time.Now()).Hours()) != -24 {
 						return errors.New("expected that first balance is from yesterday")
 					}
 				}

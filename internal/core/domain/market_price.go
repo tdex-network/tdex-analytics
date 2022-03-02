@@ -4,9 +4,9 @@ import "time"
 
 type MarketPrice struct {
 	MarketID   string
-	BasePrice  int
+	BasePrice  float32
 	BaseAsset  string
-	QuotePrice int
+	QuotePrice float32
 	QuoteAsset string
 	Time       time.Time
 }

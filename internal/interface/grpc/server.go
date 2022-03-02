@@ -13,6 +13,7 @@ import (
 	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
 	"tdex-analytics/internal/core/application"
 	grpchandler "tdex-analytics/internal/interface/grpc/handler"
+	"tdex-analytics/internal/interface/grpc/interceptor"
 	"time"
 )
 
@@ -28,6 +29,7 @@ type server struct {
 	serverPort       string
 	marketBalanceSvc application.MarketBalanceService
 	marketPriceSvc   application.MarketPriceService
+	marketsLoaderSvc application.MarketsLoaderService
 	opts             serverOptions
 }
 
@@ -35,8 +37,21 @@ func NewServer(
 	serverPort string,
 	marketBalanceSvc application.MarketBalanceService,
 	marketPriceSvc application.MarketPriceService,
+	marketsLoaderSvc application.MarketsLoaderService,
 	opts ...ServerOption,
 ) (Server, error) {
+	if err := marketsLoaderSvc.StartFetchingMarketsJob(); err != nil {
+		return nil, err
+	}
+
+	if err := marketPriceSvc.StartFetchingPricesJob(); err != nil {
+		return nil, err
+	}
+
+	if err := marketBalanceSvc.StartFetchingBalancesJob(); err != nil {
+		return nil, err
+	}
+
 	defaultOpts := defaultServerOptions(serverPort)
 	for _, o := range opts {
 		if err := o.apply(&defaultOpts); err != nil {
@@ -48,6 +63,7 @@ func NewServer(
 		serverPort:       serverPort,
 		marketBalanceSvc: marketBalanceSvc,
 		marketPriceSvc:   marketPriceSvc,
+		marketsLoaderSvc: marketsLoaderSvc,
 		opts:             defaultOpts,
 	}, nil
 }
@@ -127,7 +143,12 @@ func (s *server) Start(ctx context.Context, stop context.CancelFunc) <-chan erro
 
 func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 	analyticsHandler := grpchandler.NewAnalyticsHandler(s.marketBalanceSvc, s.marketPriceSvc)
-	tdexaGrpcServer := grpc.NewServer()
+	chainInterceptorSvc, err := interceptor.NewService()
+	if err != nil {
+		return nil, err
+	}
+	opts := chainInterceptorSvc.CreateServerOpts()
+	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
 
 	return tdexaGrpcServer, nil
