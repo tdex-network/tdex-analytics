@@ -145,20 +145,6 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviders() ([]LiquidityProvider
 		return nil, fmt.Errorf("status: %v, err: %v", resp.StatusCode, string(body))
 	}
 
-	reg := &Registry{}
-	if err = json.Unmarshal(body, reg); err != nil {
-		return nil, err
-	}
-
-	resp, err = http.Get(reg.DownloadUrl)
-	if err != nil {
-		return nil, err
-	}
-	body, err = ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
 	var liquidityProviders []LiquidityProvider
 	if err = json.Unmarshal(body, &liquidityProviders); err != nil {
 		return nil, err
@@ -233,25 +219,6 @@ type Market struct {
 	Url        string
 	QuoteAsset string
 	BaseAsset  string
-}
-
-type Registry struct {
-	Name        string `json:"name"`
-	Path        string `json:"path"`
-	Sha         string `json:"sha"`
-	Size        int    `json:"size"`
-	Url         string `json:"url"`
-	HtmlUrl     string `json:"html_url"`
-	GitUrl      string `json:"git_url"`
-	DownloadUrl string `json:"download_url"`
-	Type        string `json:"type"`
-	Content     string `json:"content"`
-	Encoding    string `json:"encoding"`
-	Links       struct {
-		Self string `json:"self"`
-		Git  string `json:"git"`
-		Html string `json:"html"`
-	} `json:"_links"`
 }
 
 type LiquidityProvider struct {

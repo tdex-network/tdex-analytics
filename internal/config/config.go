@@ -46,7 +46,7 @@ func init() {
 	vip.SetDefault(DbInsecure, true)
 	vip.SetDefault(AwsRegion, "eu-central-1")
 	vip.SetDefault(TorProxyUrl, "127.0.0.1:9050")
-	vip.SetDefault(RegistryUrl, "https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json")
+	vip.SetDefault(RegistryUrl, "https://raw.githubusercontent.com/tdex-network/tdex-registry/master/registry.json")
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
