@@ -1,10 +1,11 @@
 # first image used to build the sources
 FROM golang:1.17-buster AS builder
 
-ENV GO111MODULE=on \
-    GOOS=linux \
-    CGO_ENABLED=1 \
-    GOARCH=amd64
+ARG VERSION
+ARG COMMIT
+ARG DATE
+ARG TARGETOS
+ARG TARGETARCH
 
 WORKDIR /tdexa
 
@@ -12,7 +13,7 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -ldflags="-s -w " -o ./bin/tdexad cmd/tdexad/main.go
+RUN GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -ldflags="-s -w " -o ./bin/tdexad cmd/tdexad/main.go
 RUN go build -ldflags="-X 'main.version=${VERSION}' -X 'main.commit=${COMMIT}' -X 'main.date=${DATE}'" -o ./bin/tdexa cmd/tdexa/*
 
 # Second image, running the towerd executable

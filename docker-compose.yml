@@ -8,7 +8,7 @@ services:
     ports:
       - "8086:8086"
     volumes:
-      - influxdb-data:/var/lib/influxdb
+      - ${PWD}/influxdb-data:/var/lib/influxdb
       - ./influxdb-conf/config.yml:/etc/influxdb2/config.yml
     environment:
       - DOCKER_INFLUXDB_INIT_MODE=setup
@@ -27,7 +27,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - pg-data:/var/lib/postgresql/data
+      - ${PWD}/pg-data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -41,7 +41,7 @@ services:
     ports:
       - "9050:9050"
     volumes:
-      - ./tor-proxy-conf/torrc:/etc/tor/torrc
+      - ${PWD}/tor-proxy-conf/torrc:/etc/tor/torrc
     networks:
       - tdexa
 
