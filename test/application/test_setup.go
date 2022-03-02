@@ -64,6 +64,7 @@ func (a *AppSvcTestSuit) SetupSuite() {
 	tdexMarketLoaderSvc := tdexmarketloader.NewService(
 		"127.0.0.1:9050",
 		"https://api.github.com/repos/tdex-network/tdex-registry/contents/registry.json",
+		1000,
 	)
 
 	marketLoaderSvc = application.NewMarketsLoaderService(

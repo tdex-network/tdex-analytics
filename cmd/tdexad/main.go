@@ -43,6 +43,7 @@ func main() {
 	tdexMarketLoaderSvc := tdexmarketloader.NewService(
 		config.GetString(config.TorProxyUrl),
 		config.GetString(config.RegistryUrl),
+		config.GetInt(config.PriceAmount),
 	)
 
 	marketLoaderSvc := application.NewMarketsLoaderService(

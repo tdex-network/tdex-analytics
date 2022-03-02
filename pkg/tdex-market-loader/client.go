@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"github.com/tdex-network/tdex-protobuf/generated/go/trade"
 	"github.com/tdex-network/tdex-protobuf/generated/go/types"
@@ -33,12 +34,14 @@ type Service interface {
 type tdexMarketLoaderService struct {
 	torProxyUrl string
 	registryUrl string
+	priceAmount int
 }
 
-func NewService(torProxyUrl, registryUrl string) Service {
+func NewService(torProxyUrl, registryUrl string, priceAmount int) Service {
 	return &tdexMarketLoaderService{
 		torProxyUrl: torProxyUrl,
 		registryUrl: registryUrl,
+		priceAmount: priceAmount,
 	}
 }
 
@@ -82,22 +85,19 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	defer close()
 
 	client := trade.NewTradeClient(conn)
-	reply, err := client.MarketPrice(ctx, &trade.MarketPriceRequest{
+	reply, err := client.Balances(ctx, &trade.BalancesRequest{
 		Market: &types.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
 		},
-		Type:   trade.TradeType_SELL,
-		Amount: 1000,
-		Asset:  market.BaseAsset,
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	return &Balance{
-		BaseBalance:  int(reply.GetPrices()[0].GetBalance().GetBaseAmount()), //TODO to be update with new spec
-		QuoteBalance: int(reply.GetPrices()[0].GetBalance().GetQuoteAmount()),
+		BaseBalance:  int(reply.GetBalances()[0].GetBalance().GetBaseAmount()), //TODO to be update with new spec
+		QuoteBalance: int(reply.GetBalances()[0].GetBalance().GetQuoteAmount()),
 	}, nil
 }
 
@@ -118,16 +118,26 @@ func (t *tdexMarketLoaderService) FetchPrice(
 			QuoteAsset: market.QuoteAsset,
 		},
 		Type:   trade.TradeType_SELL,
-		Amount: 1000,
+		Amount: uint64(t.priceAmount),
 		Asset:  market.BaseAsset,
 	})
 	if err != nil {
 		return nil, err
 	}
 
+	basePrices := make([]decimal.Decimal, 0)
+	quotePrices := make([]decimal.Decimal, 0)
+	for _, v := range reply.GetPrices() {
+		basePrices = append(basePrices, decimal.NewFromFloat32(v.GetPrice().GetBasePrice()))
+		quotePrices = append(quotePrices, decimal.NewFromFloat32(v.GetPrice().GetQuotePrice()))
+	}
+
+	basePriceAvg, _ := decimal.Avg(basePrices[0], basePrices[1:]...).Round(2).BigFloat().Float32()
+	quotePriceAvg, _ := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(2).BigFloat().Float32()
+
 	return &Price{
-		BasePrice:  int(reply.GetPrices()[0].GetPrice().GetBasePrice()), //TODO to be update with new spec
-		QuotePrice: int(reply.GetPrices()[0].GetPrice().GetQuotePrice()),
+		BasePrice:  basePriceAvg,
+		QuotePrice: quotePriceAvg,
 	}, nil
 }
 
@@ -284,6 +294,6 @@ type Balance struct {
 }
 
 type Price struct {
-	BasePrice  int
-	QuotePrice int
+	BasePrice  float32
+	QuotePrice float32
 }

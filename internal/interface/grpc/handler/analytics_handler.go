@@ -74,8 +74,8 @@ func (a *analyticsHandler) MarketsPrices(
 		marketPrices := make([]*tdexav1.MarketPrice, 0)
 		for _, v1 := range v {
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
-				BasePrice:  int64(v1.BasePrice),
-				QuotePrice: int64(v1.QuotePrice),
+				BasePrice:  v1.BasePrice,
+				QuotePrice: v1.QuotePrice,
 				Time:       v1.Time.String(),
 			})
 		}

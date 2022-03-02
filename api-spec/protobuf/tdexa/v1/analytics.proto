@@ -64,13 +64,13 @@ message MarketPrices {
 }
 message MarketPrice {
   // base is the price of one unit of the base asset, priced in quote asset assuming the trade amount was, ie. 100 unit of that asset
-  int64 base_price = 1;
+  float base_price = 1;
   // quote amount
-  int64 quote_price = 2;
+  float quote_price = 2;
   // base price converted to reference one
-  int64 base_reference_price = 3;
+  float base_reference_price = 3;
   // quote price converted to reference one
-  int64 quote_reference_price = 4;
+  float quote_reference_price = 4;
   // point in time when market had this price
   string time = 5;
 }

@@ -23,6 +23,7 @@ const (
 	TorProxyUrl             = "TOR_PROXY_URL"
 	RegistryUrl             = "REGISTRY_URL"
 	LogLevelKey             = "LOG_LEVEL"
+	PriceAmount             = "PRICE_AMOUNT"
 )
 
 var vip *viper.Viper
@@ -48,6 +49,7 @@ func init() {
 	vip.SetDefault(TorProxyUrl, "127.0.0.1:9050")
 	vip.SetDefault(RegistryUrl, "https://raw.githubusercontent.com/tdex-network/tdex-registry/master/registry.json")
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
+	vip.SetDefault(PriceAmount, 100)
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")

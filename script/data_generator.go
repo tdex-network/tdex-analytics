@@ -21,7 +21,7 @@ func main() {
 	}
 	balancesWriter := bufio.NewWriter(fileBalances)
 
-	pricesTemplate := "market_price,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_price=50i,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_price=500i %v\n"
+	pricesTemplate := "market_price,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_price=50,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_price=500 %v\n"
 	balancesTemplate := "market_balance,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_balance=50i,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_balances=500i %v\n"
 	t := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
 	for {

@@ -56,9 +56,9 @@ func (m *MarketBalance) toDomain() (*domain.MarketBalance, error) {
 
 type MarketPrice struct {
 	MarketID   string
-	BasePrice  int
+	BasePrice  float32
 	BaseAsset  string
-	QuotePrice int
+	QuotePrice float32
 	QuoteAsset string
 	Time       time.Time
 }
@@ -138,9 +138,9 @@ type MarketsPrices struct {
 }
 
 type Price struct {
-	BasePrice  int
+	BasePrice  float32
 	BaseAsset  string
-	QuotePrice int
+	QuotePrice float32
 	QuoteAsset string
 	Time       time.Time
 }
