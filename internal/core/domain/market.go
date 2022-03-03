@@ -7,3 +7,9 @@ type Market struct {
 	BaseAsset    string
 	QuoteAsset   string
 }
+
+type Filter struct {
+	Url        string
+	BaseAsset  string
+	QuoteAsset string
+}
