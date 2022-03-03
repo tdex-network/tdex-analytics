@@ -36,6 +36,7 @@ func main() {
 		configCmd,
 		listBalancesCmd,
 		listPricesCmd,
+		marketsCmd,
 	)
 
 	err := app.Run(os.Args)
@@ -219,6 +220,21 @@ func getAnalyticsClient() (tdexav1.AnalyticsClient, func(), error) {
 	cleanup := func() { _ = conn.Close() }
 
 	return tdexav1.NewAnalyticsClient(conn), cleanup, nil
+}
+
+func getMarketClient() (tdexav1.MarketClient, func(), error) {
+	creds, err := getCreds()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conn, err := getClientConn(creds)
+	if err != nil {
+		return nil, nil, err
+	}
+	cleanup := func() { _ = conn.Close() }
+
+	return tdexav1.NewMarketClient(conn), cleanup, nil
 }
 
 func getCreds() ([]grpc.DialOption, error) {

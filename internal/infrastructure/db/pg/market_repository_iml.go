@@ -1,7 +1,9 @@
 package dbpg
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"github.com/lib/pq"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
@@ -51,4 +53,75 @@ func (p *postgresDbService) GetAllMarkets(
 	}
 
 	return res, nil
+}
+
+func (p *postgresDbService) GetAllMarketsForFilter(
+	ctx context.Context,
+	filter []domain.Filter,
+) ([]domain.Market, error) {
+	res := make([]domain.Market, 0)
+
+	query, values := generateQueryAndValues(filter)
+
+	rows, err := p.db.QueryContext(ctx, query, values...)
+	if err != nil {
+		return nil, err
+	}
+
+	for rows.Next() {
+		var id int
+		var providerName string
+		var url string
+		var baseAsset string
+		var quoteAsset string
+
+		if err = rows.Scan(&id, &providerName, &url, &baseAsset, &quoteAsset); err != nil {
+			return nil, err
+		}
+
+		res = append(res, domain.Market{
+			ID:           id,
+			ProviderName: providerName,
+			Url:          url,
+			BaseAsset:    baseAsset,
+			QuoteAsset:   quoteAsset,
+		})
+	}
+
+	return res, nil
+}
+
+func generateQueryAndValues(filter []domain.Filter) (string, []interface{}) {
+	query := bytes.NewBuffer([]byte("SELECT * FROM market"))
+	queryCondition, values := parseFilter(filter)
+	if queryCondition != "" {
+		query.WriteString(" ")
+		query.WriteString(queryCondition)
+	}
+
+	return query.String(), values
+}
+
+func parseFilter(filter []domain.Filter) (string, []interface{}) {
+	var values []interface{}
+	queryCondition := bytes.NewBuffer([]byte(""))
+
+	if len(filter) > 0 {
+		values = make([]interface{}, 0)
+		j := 3
+		for i, v := range filter {
+			if i == 0 {
+				queryCondition.WriteString("WHERE (url=$1 AND base_asset=$2 AND quote_asset=$3)")
+			} else {
+				queryCondition.WriteString(fmt.Sprintf(" OR (url=$%v AND base_asset=$%v AND quote_asset=$%v)", j+1, j+2, j+3))
+				j = j + 3
+			}
+
+			values = append(values, v.Url)
+			values = append(values, v.BaseAsset)
+			values = append(values, v.QuoteAsset)
+		}
+	}
+
+	return queryCondition.String(), values
 }

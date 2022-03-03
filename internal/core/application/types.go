@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/pkg/hexerr"
 	"time"
@@ -247,4 +248,27 @@ func (t *TimeRange) getStartAndEndTime(now time.Time) (startTime time.Time, endT
 	}
 
 	return
+}
+
+type MarketRequest struct {
+	Url        string
+	BaseAsset  string
+	QuoteAsset string
+}
+
+func (m *MarketRequest) validate() error {
+	return validation.ValidateStruct(
+		m,
+		validation.Field(&m.Url, is.URL),
+		validation.Field(&m.BaseAsset, validation.By(validateAssetString)),
+		validation.Field(&m.QuoteAsset, validation.By(validateAssetString)),
+	)
+}
+
+func (m *MarketRequest) toDomain() domain.Filter {
+	return domain.Filter{
+		Url:        m.Url,
+		BaseAsset:  m.BaseAsset,
+		QuoteAsset: m.QuoteAsset,
+	}
 }

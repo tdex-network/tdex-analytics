@@ -37,6 +37,13 @@ func (s *PgDbTestSuite) SetupSuite() {
 		s.FailNow(err.Error())
 	}
 
+	if svc != nil {
+		err := svc.CreateLoader("../fixtures")
+		if err != nil {
+			s.FailNow(err.Error())
+		}
+	}
+
 	pgDbSvc = svc
 }
 
@@ -47,7 +54,9 @@ func (s *PgDbTestSuite) TearDownSuite() {
 }
 
 func (s *PgDbTestSuite) BeforeTest(suiteName, testName string) {
-
+	if err := pgDbSvc.LoadFixtures(); err != nil {
+		s.FailNow(err.Error())
+	}
 }
 
 func (s *PgDbTestSuite) AfterTest(suiteName, testName string) {

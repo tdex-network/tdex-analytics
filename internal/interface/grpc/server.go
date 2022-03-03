@@ -30,6 +30,7 @@ type server struct {
 	marketBalanceSvc application.MarketBalanceService
 	marketPriceSvc   application.MarketPriceService
 	marketsLoaderSvc application.MarketsLoaderService
+	marketSvc        application.MarketService
 	opts             serverOptions
 }
 
@@ -38,6 +39,7 @@ func NewServer(
 	marketBalanceSvc application.MarketBalanceService,
 	marketPriceSvc application.MarketPriceService,
 	marketsLoaderSvc application.MarketsLoaderService,
+	marketSvc application.MarketService,
 	opts ...ServerOption,
 ) (Server, error) {
 	if err := marketsLoaderSvc.StartFetchingMarketsJob(); err != nil {
@@ -64,6 +66,7 @@ func NewServer(
 		marketBalanceSvc: marketBalanceSvc,
 		marketPriceSvc:   marketPriceSvc,
 		marketsLoaderSvc: marketsLoaderSvc,
+		marketSvc:        marketSvc,
 		opts:             defaultOpts,
 	}, nil
 }
@@ -143,13 +146,18 @@ func (s *server) Start(ctx context.Context, stop context.CancelFunc) <-chan erro
 
 func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 	analyticsHandler := grpchandler.NewAnalyticsHandler(s.marketBalanceSvc, s.marketPriceSvc)
+	marketsHandler := grpchandler.NewMarketHandler(s.marketSvc)
+
 	chainInterceptorSvc, err := interceptor.NewService()
 	if err != nil {
 		return nil, err
 	}
+
 	opts := chainInterceptorSvc.CreateServerOpts()
+
 	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
+	tdexav1.RegisterMarketServer(tdexaGrpcServer, marketsHandler)
 
 	return tdexaGrpcServer, nil
 }

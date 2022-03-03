@@ -4,7 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/golang-migrate/migrate/v4"
+	"sync"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
 
@@ -25,8 +27,10 @@ const (
 )
 
 type Service interface {
-	Close() error
 	domain.MarketRepository
+	Close() error
+	CreateLoader(fixturesPath string) error
+	LoadFixtures() error
 }
 
 type Config struct {
@@ -37,8 +41,10 @@ type Config struct {
 }
 
 type postgresDbService struct {
-	db      *sql.DB
-	querier *queries.Queries
+	db             *sql.DB
+	querier        *queries.Queries
+	fixturesLoader *testfixtures.Loader
+	mutex          *sync.RWMutex
 }
 
 func New(dbConfig DbConfig) (Service, error) {
@@ -153,4 +159,31 @@ func dataSourceStr(dbConfig DbConfig) (string, error) {
 		authenticationToken,
 		dbConfig.DbName,
 	), nil
+}
+
+func (p *postgresDbService) CreateLoader(fixturesPath string) error {
+	f, err := testfixtures.New(
+		testfixtures.Database(p.db),
+		testfixtures.Dialect(postgresDialect),
+		testfixtures.Directory(fixturesPath),
+	)
+	if err != nil {
+		return err
+	}
+
+	p.fixturesLoader = f
+	p.mutex = new(sync.RWMutex)
+
+	return nil
+}
+
+func (p *postgresDbService) LoadFixtures() error {
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
+	err := p.fixturesLoader.Load()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

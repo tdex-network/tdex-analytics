@@ -63,11 +63,14 @@ func main() {
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
 
+	marketSvc := application.NewMarketService(marketRepository)
+
 	tdexad, err := tdexagrpc.NewServer(
 		strconv.Itoa(config.GetInt(config.GrpcServerPortKey)),
 		marketBalanceSvc,
 		marketPriceSvc,
 		marketLoaderSvc,
+		marketSvc,
 		opts,
 	)
 

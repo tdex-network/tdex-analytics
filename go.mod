@@ -8,6 +8,7 @@ require (
 	github.com/btcsuite/btcutil v1.0.2
 	github.com/go-errors/errors v1.4.2
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+	github.com/go-testfixtures/testfixtures/v3 v3.6.1
 	github.com/gogo/protobuf v1.3.2
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2

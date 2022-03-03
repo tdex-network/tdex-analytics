@@ -224,3 +224,47 @@ func TestTimeRange_getStartAndEndTime(t *testing.T) {
 		})
 	}
 }
+
+func TestMarketRequest_validate(t *testing.T) {
+	type fields struct {
+		Url        string
+		BaseAsset  string
+		QuoteAsset string
+	}
+	tests := []struct {
+		name    string
+		fields  fields
+		wantErr bool
+	}{
+		{
+			name: "valid regular url",
+			fields: fields{
+				Url:        "https://provider.tdex.network:9945",
+				BaseAsset:  "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+				QuoteAsset: "0e99c1a6da379d1f4151fb9df90449d40d0608f6cb33a5bcbfc8c265f42bab0a",
+			},
+			wantErr: false,
+		},
+		{
+			name: "valid onion url",
+			fields: fields{
+				Url:        "http://d7y3mzol3eo2tneqw5oytj23knm3734npwml4jzazrzzpy32e56lrxqd.onion:80",
+				BaseAsset:  "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+				QuoteAsset: "0e99c1a6da379d1f4151fb9df90449d40d0608f6cb33a5bcbfc8c265f42bab0a",
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			m := &MarketRequest{
+				Url:        tt.fields.Url,
+				BaseAsset:  tt.fields.BaseAsset,
+				QuoteAsset: tt.fields.QuoteAsset,
+			}
+			if err := m.validate(); (err != nil) != tt.wantErr {
+				t.Errorf("validate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

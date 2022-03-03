@@ -15,6 +15,8 @@ var (
 	marketBalanceSvc  application.MarketBalanceService
 	marketPriceSvc    application.MarketPriceService
 	marketLoaderSvc   application.MarketsLoaderService
+	marketSvc         application.MarketService
+	marketRepository  dbpg.Service
 	ctx               = context.Background()
 	nilPp             = application.NIL
 	lastHourPp        = application.LastHour
@@ -47,7 +49,7 @@ func (a *AppSvcTestSuit) SetupSuite() {
 
 	influxDbSvc = db
 
-	marketRepository, err := dbpg.New(dbpg.DbConfig{
+	mr, err := dbpg.New(dbpg.DbConfig{
 		DbUser:     "root",
 		DbPassword: "secret",
 		DbHost:     "127.0.0.1",
@@ -60,6 +62,14 @@ func (a *AppSvcTestSuit) SetupSuite() {
 	if err != nil {
 		a.FailNow(err.Error())
 	}
+
+	if mr != nil {
+		err := mr.CreateLoader("../fixtures")
+		if err != nil {
+			a.FailNow(err.Error())
+		}
+	}
+	marketRepository = mr
 
 	tdexMarketLoaderSvc := tdexmarketloader.NewService(
 		"127.0.0.1:9050",
@@ -81,12 +91,17 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		marketRepository,
 		tdexMarketLoaderSvc,
 	)
+	marketSvc = application.NewMarketService(marketRepository)
 }
 
 func (a *AppSvcTestSuit) TearDownSuite() {
 	influxDbSvc.Close()
 }
 
-func (a *AppSvcTestSuit) BeforeTest(suiteName, testName string) {}
+func (a *AppSvcTestSuit) BeforeTest(suiteName, testName string) {
+	if err := marketRepository.LoadFixtures(); err != nil {
+		a.FailNow(err.Error())
+	}
+}
 
 func (a *AppSvcTestSuit) AfterTest(suiteName, testName string) {}
