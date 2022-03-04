@@ -1,38 +1,76 @@
-# Tdex-Analytics
-Tdex-Analytics-Daemon provides historical data about balances and prices of various
-Liquidity Provider's market's.<br>
-It periodically polls Liquidity Provider's registry and fetches all available 
-markets and their prices and balances.<br>
-These background jobs fills time-series DB with data that are accessible through gRPC api's.<br>
-Api specification can be found in [here](https://github.com/tdex-network/tdex-analytics/blob/master/api-spec/protobuf/tdexa/v1/analytics.proto#L1). <br>
-List of available Liquidity Provider's can be found in [here](https://github.com/tdex-network/tdex-registry).
+# 📊 tdex-analytics
 
-### Usage 
-Build binaries:
+[![Go Report Card](https://goreportcard.com/badge/github.com/tdex-network/tdex-analytics)](https://goreportcard.com/report/github.com/tdex-network/tdex-analytics)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/tdex-network/tdex-analytics)](https://pkg.go.dev/github.com/tdex-network/tdex-analytics)
+[![Release](https://img.shields.io/github/release/tdex-network/tdex-analytics.svg)](https://github.com/tdex-network/tdex-analytics/releases/latest)
+
+TDEX Analytics provides historical data about balances and prices of Liquidity Providers registered in the [tdex-registry](https://github.com/tdex-network/tdex-registry).
+
+It periodically polls Liquidity Provider's registry and fetches all available markets and their market price and balances and fills a time-series DB with data that are accessible through gRPC & JSON HTTP APIs.
+
+API specifications can be found in [here](https://github.com/tdex-network/tdex-analytics/blob/master/api-spec/protobuf/tdexa/v1).
+
+
+## 🖥 Local Development
+
+Below is a list of commands you will probably find useful for development.
+
+### Requirements
+
+* Go (^1.17.*)
+
+
+### Build
+
+Builds `tdexad` as static binary in the `./bin` folder
+
+```bash
+$ make build
 ```
-make build
+
+### Build CLI
+
+Builds `tdexa` as static binary in the `./bin` folder
+
+```bash
+$ make build-cli
 ```
-Start tdex-analytics daemon:
+
+### Run with docker-compose
+
+Build docker image and runs the project with other dependencies with default configuration.
+
+```bash
+$ make dev
 ```
-make dev
+
+### Test
+
+```bash
+$ make testall
 ```
-Config CLI:
+
+## 📄 Usage
+
+- Configure CLI:
 ```
 ./bin/tdexa config
 ```
-List market's id's to be passed to prices/balances cmd's:
+
+- List market's id's to be passed to prices/balances cmd's:
 ```
 ./bin/tdexa markets
 ```
-List balances for last hour:
+
+- List balances for last hour:
 ```
 ./bin/tdexa balances --predefined_period 1
 ```
-List prices for last hour:
+
+- List prices for last hour:
 ```
 ./bin/tdexa prices --predefined_period 1
 ```
-In-depth documentation for installing and using the tdex-analytics is available at docs.tdex.network (TODO)
 
 ### Release
 
@@ -40,4 +78,4 @@ Precompiled binaries are published with each [release](https://github.com/tdex-n
 
 ### License
 
-This project is licensed under the MIT License - see the[LICENSE](https://github.com/tdex-network/tdex-analytics/blob/master/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](https://github.com/tdex-network/tdex-analytics/blob/master/LICENSE) file for details.
