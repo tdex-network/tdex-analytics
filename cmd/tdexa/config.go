@@ -22,7 +22,7 @@ const (
 
 var configCmd = &cli.Command{
 	Name:   "config",
-	Usage:  "Configures gate cli",
+	Usage:  "configures gate cli",
 	Action: configure,
 	Flags: []cli.Flag{
 		&cli.StringFlag{

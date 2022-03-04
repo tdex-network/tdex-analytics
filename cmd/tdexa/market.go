@@ -10,7 +10,7 @@ import (
 
 var marketsCmd = &cli.Command{
 	Name:   "markets",
-	Usage:  "list markets",
+	Usage:  "list market's id's to be passed in prices/balances cmd's",
 	Action: listMarkets,
 	Flags: []cli.Flag{
 		&cli.StringSliceFlag{
