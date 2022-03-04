@@ -2,16 +2,13 @@ package application
 
 import (
 	"context"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
-)
-
-const (
-	fetchPriceCronExpression = "@every 5m"
 )
 
 type MarketPriceService interface {
@@ -32,22 +29,25 @@ type MarketPriceService interface {
 }
 
 type marketPriceService struct {
-	marketPriceRepository domain.MarketPriceRepository
-	marketRepository      domain.MarketRepository
-	tdexMarketLoaderSvc   tdexmarketloader.Service
-	cronSvc               *cron.Cron
+	marketPriceRepository    domain.MarketPriceRepository
+	marketRepository         domain.MarketRepository
+	tdexMarketLoaderSvc      tdexmarketloader.Service
+	cronSvc                  *cron.Cron
+	fetchPriceCronExpression string
 }
 
 func NewMarketPriceService(
 	marketPriceRepository domain.MarketPriceRepository,
 	marketRepository domain.MarketRepository,
 	tdexMarketLoaderSvc tdexmarketloader.Service,
+	jobPeriodInMinutes string,
 ) MarketPriceService {
 	return &marketPriceService{
-		marketPriceRepository: marketPriceRepository,
-		cronSvc:               cron.New(),
-		marketRepository:      marketRepository,
-		tdexMarketLoaderSvc:   tdexMarketLoaderSvc,
+		marketPriceRepository:    marketPriceRepository,
+		cronSvc:                  cron.New(),
+		marketRepository:         marketRepository,
+		tdexMarketLoaderSvc:      tdexMarketLoaderSvc,
+		fetchPriceCronExpression: fmt.Sprintf("@every %vm", jobPeriodInMinutes),
 	}
 }
 
@@ -111,7 +111,7 @@ func (m *marketPriceService) GetPrices(
 
 func (m *marketPriceService) StartFetchingPricesJob() error {
 	if _, err := m.cronSvc.AddJob(
-		fetchPriceCronExpression,
+		m.fetchPriceCronExpression,
 		cron.FuncJob(m.FetchPricesForAllMarkets),
 	); err != nil {
 		return err

@@ -24,6 +24,7 @@ const (
 	RegistryUrl             = "REGISTRY_URL"
 	LogLevelKey             = "LOG_LEVEL"
 	PriceAmount             = "PRICE_AMOUNT"
+	JobPeriodInMinutes      = "JOB_PERIOD_IN_MINUTES"
 )
 
 var vip *viper.Viper
@@ -50,6 +51,7 @@ func init() {
 	vip.SetDefault(RegistryUrl, "https://raw.githubusercontent.com/tdex-network/tdex-registry/master/registry.json")
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 	vip.SetDefault(PriceAmount, 100)
+	vip.SetDefault(JobPeriodInMinutes, "5")
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")

@@ -85,11 +85,13 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		"5",
 	)
 	marketPriceSvc = application.NewMarketPriceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		"5",
 	)
 	marketSvc = application.NewMarketService(marketRepository)
 }
