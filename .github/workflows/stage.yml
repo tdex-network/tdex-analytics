@@ -1,0 +1,62 @@
+name: 'Deploy tdex-analytics to staging env'
+
+on:
+  push:
+    branches: [ master ]
+jobs:
+  cicd-staging:
+    name: tdex-analytics stage environment
+    runs-on: ubuntu-latest
+    env:
+      STAGE: staging
+      COMMIT_ID: ${{ github.event.head_commit.message }}
+    steps:
+      
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: eu-central-1
+      
+      - name: Get Latest tdex-analytics task
+        run: |
+          echo TDEXA_CID=$(aws ecs list-tasks --cluster tdex --desired-status RUNNING --family tdex-analytics | egrep "task/" | sed -E "s/.*task\/(.*)\"/\1/") >> $GITHUB_ENV
+      
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v2
+        with:
+          ref: 'master'
+      
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: tdex-analytics
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "::set-output name=image::$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG"
+
+      - name: Fill in the new image ID in the Amazon ECS task definition tdex-analytics
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ./cf-resources/task-definition-stage.json
+          container-name: tdex-analytics
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition tdex-analytics
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: tdex-analytics
+          cluster: tdex
+      
+      - name: Stop tdex-analytics running container
+        run: aws ecs stop-task --cluster tdex --task ${TDEXA_CID}
