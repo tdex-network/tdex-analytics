@@ -3,16 +3,13 @@ package application
 import (
 	"context"
 	"errors"
+	"fmt"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
-)
-
-const (
-	fetchBalanceCronExpression = "@every 5m"
 )
 
 var (
@@ -37,23 +34,26 @@ type MarketBalanceService interface {
 }
 
 type marketBalanceService struct {
-	marketBalanceRepository domain.MarketBalanceRepository
-	marketRepository        domain.MarketRepository
-	tdexMarketLoaderSvc     tdexmarketloader.Service
-	cronSvc                 *cron.Cron
+	marketBalanceRepository    domain.MarketBalanceRepository
+	marketRepository           domain.MarketRepository
+	tdexMarketLoaderSvc        tdexmarketloader.Service
+	cronSvc                    *cron.Cron
+	fetchBalanceCronExpression string
 }
 
 func NewMarketBalanceService(
 	marketBalanceRepository domain.MarketBalanceRepository,
 	marketRepository domain.MarketRepository,
 	tdexMarketLoaderSvc tdexmarketloader.Service,
+	jobPeriodInMinutes string,
 ) MarketBalanceService {
 
 	return &marketBalanceService{
-		marketBalanceRepository: marketBalanceRepository,
-		cronSvc:                 cron.New(),
-		marketRepository:        marketRepository,
-		tdexMarketLoaderSvc:     tdexMarketLoaderSvc,
+		marketBalanceRepository:    marketBalanceRepository,
+		cronSvc:                    cron.New(),
+		marketRepository:           marketRepository,
+		tdexMarketLoaderSvc:        tdexMarketLoaderSvc,
+		fetchBalanceCronExpression: fmt.Sprintf("@every %vm", jobPeriodInMinutes),
 	}
 }
 
@@ -117,7 +117,7 @@ func (m *marketBalanceService) GetBalances(
 
 func (m *marketBalanceService) StartFetchingBalancesJob() error {
 	if _, err := m.cronSvc.AddJob(
-		fetchBalanceCronExpression,
+		m.fetchBalanceCronExpression,
 		cron.FuncJob(m.FetchBalancesForAllMarkets),
 	); err != nil {
 		return err

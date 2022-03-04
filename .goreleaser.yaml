@@ -1,0 +1,130 @@
+builds:
+  - id: tdexad
+    main: ./cmd/tdexad
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: tdexad
+
+  - id: tdexa
+    main: ./cmd/tdexa
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    binary: tdexa
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  use: github-native
+
+archives:
+  - id: tdexad
+    format: binary
+    builds:
+      - tdexad
+    name_template: "tdexad-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - id: tdexa
+    format: binary
+    builds:
+      - tdexa
+    name_template: "tdexa-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+dockers:
+  ###########################
+  # tag latest & prerelease #
+  ###########################
+
+  #amd64
+  - image_templates:
+    - "ghcr.io/tdex-network/tdexad:{{ .Tag }}-amd64"
+    # push always either release or prerelease with a docker tag with the semver only
+    skip_push: false
+    use: buildx
+    dockerfile: Dockerfile
+    # GOOS of the built binaries/packages that should be used.
+    goos: linux
+    # GOARCH of the built binaries/packages that should be used.
+    goarch: amd64
+    # Template of the docker build flags.
+    build_flag_templates:
+      - "--platform=linux/amd64"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=tdexa"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--build-arg=VERSION={{.Version}}"
+      - "--build-arg=COMMIT={{.Commit}}"
+      - "--build-arg=DATE={{.Date}}"
+
+    extra_files:
+      - api-spec
+      - cmd
+      - influxdb-conf
+      - internal
+      - pkg
+      - script
+      - test
+      - tor-proxy-conf
+      - go.mod
+      - go.sum
+
+  # arm64
+  - image_templates:
+    - "ghcr.io/tdex-network/tdexad:{{ .Tag }}-arm64v8"
+    # push always either release or prerelease with a docker tag with the semver only
+    skip_push: false
+    use: buildx
+    dockerfile: Dockerfile
+    # GOOS of the built binaries/packages that should be used.
+    goos: linux
+    # GOARCH of the built binaries/packages that should be used.
+    goarch: arm64
+    # Template of the docker build flags.
+    build_flag_templates:
+      - "--platform=linux/arm64/v8"
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title=tdexa"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--build-arg=VERSION={{.Version}}"
+      - "--build-arg=COMMIT={{.Commit}}"
+      - "--build-arg=DATE={{.Date}}"
+
+    extra_files:
+      - go.mod
+      - go.sum
+      - internal
+      - config
+      - pkg
+      - cmd
+      - api-spec
+
+docker_manifests:
+  - name_template: ghcr.io/tdex-network/tdexad:{{ .Tag }}
+    image_templates:
+      - ghcr.io/tdex-network/tdexad:{{ .Tag }}-amd64
+      - ghcr.io/tdex-network/tdexad:{{ .Tag }}-arm64v8
+    skip_push: false
+
+  - name_template: ghcr.io/tdex-network/tdexad:latest
+    image_templates:
+      - ghcr.io/tdex-network/tdexad:{{ .Tag }}-amd64
+      - ghcr.io/tdex-network/tdexad:{{ .Tag }}-arm64v8
+    skip_push: auto

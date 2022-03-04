@@ -54,11 +54,13 @@ func main() {
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		config.GetString(config.JobPeriodInMinutes),
 	)
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		config.GetString(config.JobPeriodInMinutes),
 	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()

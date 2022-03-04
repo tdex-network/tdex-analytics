@@ -193,11 +193,22 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 func (t *tdexMarketLoaderService) getConn(endpoint string) (*grpc.ClientConn, func(), error) {
 	var conn *grpc.ClientConn
 
+	url := strings.ReplaceAll(endpoint, httpRegex, "")
+	creds := grpc.WithTransportCredentials(insecure.NewCredentials())
+	if strings.Contains(endpoint, httpsRegex) { //if https skip TLS cert, it can be trusted
+		url = strings.ReplaceAll(endpoint, httpsRegex, "")
+		config := &tls.Config{
+			InsecureSkipVerify: true,
+		}
+		creds = grpc.WithTransportCredentials(credentials.NewTLS(config))
+	}
+
 	if strings.Contains(endpoint, onionUrlRegex) {
 		c, err := getGrpcConnectionWithTorClient(
 			context.Background(),
-			strings.ReplaceAll(endpoint, httpRegex, ""),
+			url,
 			t.torProxyUrl,
+			creds,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -205,13 +216,10 @@ func (t *tdexMarketLoaderService) getConn(endpoint string) (*grpc.ClientConn, fu
 
 		conn = c
 	} else {
-		config := &tls.Config{
-			InsecureSkipVerify: true,
-		}
 		c, err := grpc.DialContext(
 			context.Background(),
-			strings.ReplaceAll(endpoint, httpsRegex, ""),
-			grpc.WithTransportCredentials(credentials.NewTLS(config)), //TODO if provider doesnt uses TLS this will fail
+			url,
+			creds,
 		)
 		if err != nil {
 			return nil, nil, err
@@ -240,6 +248,7 @@ type LiquidityProvider struct {
 func getGrpcConnectionWithTorClient(
 	ctx context.Context,
 	onionUrl, torProxyUrl string,
+	creds grpc.DialOption,
 ) (*grpc.ClientConn, error) {
 	result := make(chan interface{}, 1)
 
@@ -264,7 +273,7 @@ func getGrpcConnectionWithTorClient(
 	}
 
 	opts := []grpc.DialOption{
-		grpc.WithTransportCredentials(insecure.NewCredentials()), //TODO if provider uses TLS this will fail
+		creds,
 		grpc.WithContextDialer(dialer),
 	}
 
