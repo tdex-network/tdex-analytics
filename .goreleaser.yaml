@@ -111,7 +111,6 @@ dockers:
       - go.mod
       - go.sum
       - internal
-      - config
       - pkg
       - cmd
       - api-spec
