@@ -75,12 +75,8 @@ dockers:
     extra_files:
       - api-spec
       - cmd
-      - influxdb-conf
       - internal
       - pkg
-      - script
-      - test
-      - tor-proxy-conf
       - go.mod
       - go.sum
 
@@ -108,12 +104,12 @@ dockers:
       - "--build-arg=DATE={{.Date}}"
 
     extra_files:
-      - go.mod
-      - go.sum
+      - api-spec
+      - cmd
       - internal
       - pkg
-      - cmd
-      - api-spec
+      - go.mod
+      - go.sum
 
 docker_manifests:
   - name_template: ghcr.io/tdex-network/tdexad:{{ .Tag }}
