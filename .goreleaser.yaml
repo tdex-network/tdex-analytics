@@ -30,7 +30,7 @@ snapshot:
   name_template: "{{ .Tag }}-next"
 
 changelog:
-  use: github-native
+  use: git
 
 archives:
   - id: tdexad
