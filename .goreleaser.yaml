@@ -1,0 +1,103 @@
+builds:
+  # Linux
+  - id: tdexad-linux
+    main: ./cmd/tdexad
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tdexad-linux
+
+  # Darwin
+  - id: tdexad-darwin
+    main: ./cmd/tdexad
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    binary: tdexad-darwin
+
+  ## CLI Linux
+  - id: tdexa-linux
+    main: ./cmd/tdexa
+    ldflags:
+      - -s -w
+    goos:
+      - linux
+    goarch:
+      - amd64
+    binary: tdexa-linux
+
+  - id: tdexa-darwin
+    main: ./cmd/tdexa
+    ldflags:
+      - -s -w
+    goos:
+      - darwin
+    goarch:
+      - amd64
+    binary: tdexa-darwin
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ .Tag }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+archives:
+  - id: tdexad
+    format: binary
+    builds:
+      - tdexad-linux
+      - tdexad-darwin
+    name_template: "tdexad-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - id: tdexa
+    format: binary
+    builds:
+      - tdexa-linux
+      - tdexa-darwin
+    name_template: "tdexa-v{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+  # push only release with both a docker tag latest and one with the semver
+dockers:
+  - skip_push: auto
+    dockerfile: Dockerfile
+    # image templates
+    image_templates:
+      - "ghcr.io/tdex-network/tdexad:latest"
+    # GOOS of the built binaries/packages that should be used.
+    goos: linux
+    # GOARCH of the built binaries/packages that should be used.
+    goarch: amd64
+    # Template of the docker build flags.
+    build_flag_templates:
+      - "--pull"
+      - "--label=org.opencontainers.image.created={{.Date}}"
+      - "--label=org.opencontainers.image.title={{.ProjectName}}"
+      - "--label=org.opencontainers.image.revision={{.FullCommit}}"
+      - "--label=org.opencontainers.image.version={{.Version}}"
+      - "--build-arg=VERSION={{.Version}}"
+      - "--build-arg=COMMIT={{.Commit}}"
+      - "--build-arg=DATE={{.Date}}"
+    extra_files:
+      - api-spec
+      - cmd
+      - influxdb-conf
+      - internal
+      - pkg
+      - script
+      - test
+      - tor-proxy-conf
+      - go.mod
+      - go.sum
