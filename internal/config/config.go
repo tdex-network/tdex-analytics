@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -42,6 +43,10 @@ const (
 	PriceAmount = "PRICE_AMOUNT"
 	// JobPeriodInMinutes is recurring interval for running fetch balance/price jobs
 	JobPeriodInMinutes = "JOB_PERIOD_IN_MINUTES"
+	// SSLCertPathKey is the path to the SSL certificate
+	SSLCertPathKey = "SSL_CERT"
+	// SSLKeyPathKey is the path to the SSL private key
+	SSLKeyPathKey = "SSL_KEY"
 )
 
 var vip *viper.Viper
@@ -74,6 +79,10 @@ func init() {
 		log.Fatalln("influx_db auth token not provided")
 	}
 
+	if err := validateTlsKeys(); err != nil {
+		log.WithError(err).Panic("invalid tls keys")
+	}
+
 	log.SetLevel(log.Level(GetInt(LogLevelKey)))
 }
 
@@ -87,4 +96,13 @@ func GetString(key string) string {
 
 func GetInt(key string) int {
 	return vip.GetInt(key)
+}
+
+func validateTlsKeys() error {
+	certPath, keyPath := vip.GetString(SSLCertPathKey), vip.GetString(SSLKeyPathKey)
+	if (certPath != "" && keyPath == "") || (certPath == "" && keyPath != "") {
+		return fmt.Errorf("tls requires both key and certificate when enabled")
+	}
+
+	return nil
 }
