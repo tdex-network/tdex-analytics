@@ -26,6 +26,8 @@ type AnalyticsClient interface {
 	MarketsBalances(ctx context.Context, in *MarketsBalancesRequest, opts ...grpc.CallOption) (*MarketsBalancesReply, error)
 	// returns all markets and its prices in time series
 	MarketsPrices(ctx context.Context, in *MarketsPricesRequest, opts ...grpc.CallOption) (*MarketsPricesReply, error)
+	// return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
+	ListMarketIDs(ctx context.Context, in *ListMarketIDsRequest, opts ...grpc.CallOption) (*ListMarketIDsReply, error)
 }
 
 type analyticsClient struct {
@@ -54,6 +56,15 @@ func (c *analyticsClient) MarketsPrices(ctx context.Context, in *MarketsPricesRe
 	return out, nil
 }
 
+func (c *analyticsClient) ListMarketIDs(ctx context.Context, in *ListMarketIDsRequest, opts ...grpc.CallOption) (*ListMarketIDsReply, error) {
+	out := new(ListMarketIDsReply)
+	err := c.cc.Invoke(ctx, "/tdexa.v1.Analytics/ListMarketIDs", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnalyticsServer is the server API for Analytics service.
 // All implementations should embed UnimplementedAnalyticsServer
 // for forward compatibility
@@ -62,6 +73,8 @@ type AnalyticsServer interface {
 	MarketsBalances(context.Context, *MarketsBalancesRequest) (*MarketsBalancesReply, error)
 	// returns all markets and its prices in time series
 	MarketsPrices(context.Context, *MarketsPricesRequest) (*MarketsPricesReply, error)
+	// return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
+	ListMarketIDs(context.Context, *ListMarketIDsRequest) (*ListMarketIDsReply, error)
 }
 
 // UnimplementedAnalyticsServer should be embedded to have forward compatible implementations.
@@ -73,6 +86,9 @@ func (UnimplementedAnalyticsServer) MarketsBalances(context.Context, *MarketsBal
 }
 func (UnimplementedAnalyticsServer) MarketsPrices(context.Context, *MarketsPricesRequest) (*MarketsPricesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarketsPrices not implemented")
+}
+func (UnimplementedAnalyticsServer) ListMarketIDs(context.Context, *ListMarketIDsRequest) (*ListMarketIDsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMarketIDs not implemented")
 }
 
 // UnsafeAnalyticsServer may be embedded to opt out of forward compatibility for this service.
@@ -122,6 +138,24 @@ func _Analytics_MarketsPrices_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Analytics_ListMarketIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMarketIDsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyticsServer).ListMarketIDs(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/tdexa.v1.Analytics/ListMarketIDs",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyticsServer).ListMarketIDs(ctx, req.(*ListMarketIDsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Analytics_ServiceDesc is the grpc.ServiceDesc for Analytics service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -136,6 +170,10 @@ var Analytics_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "MarketsPrices",
 			Handler:    _Analytics_MarketsPrices_Handler,
+		},
+		{
+			MethodName: "ListMarketIDs",
+			Handler:    _Analytics_ListMarketIDs_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

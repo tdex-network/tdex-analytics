@@ -37,7 +37,7 @@ func listMarkets(ctx *cli.Context) error {
 		})
 	}
 
-	client, cleanup, err := getMarketClient()
+	client, cleanup, err := getAnalyticsClient()
 	if err != nil {
 		return err
 	}
