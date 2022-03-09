@@ -157,6 +157,12 @@ func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 	}
 
 	opts := chainInterceptorSvc.CreateServerOpts()
+	if s.opts.tlsSecure {
+		if err != nil {
+			return nil, err
+		}
+		opts = append(chainInterceptorSvc.CreateServerOpts(), s.opts.grpcServerCredsOpts...)
+	}
 
 	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
