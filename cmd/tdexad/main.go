@@ -64,6 +64,11 @@ func main() {
 	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
+	certFile := config.GetString(config.SSLCertPathKey)
+	keyFile := config.GetString(config.SSLKeyPathKey)
+	if certFile != "" && keyFile != "" {
+		opts = tdexagrpc.WithTls(certFile, keyFile)
+	}
 
 	marketSvc := application.NewMarketService(marketRepository)
 

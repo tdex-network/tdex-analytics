@@ -10,15 +10,18 @@ type analyticsHandler struct {
 	tdexav1.UnimplementedAnalyticsServer
 	marketBalanceSvc application.MarketBalanceService
 	marketPriceSvc   application.MarketPriceService
+	marketSvc        application.MarketService
 }
 
 func NewAnalyticsHandler(
 	marketBalanceSvc application.MarketBalanceService,
 	marketPriceSvc application.MarketPriceService,
+	marketSvc application.MarketService,
 ) tdexav1.AnalyticsServer {
 	return &analyticsHandler{
 		marketBalanceSvc: marketBalanceSvc,
 		marketPriceSvc:   marketPriceSvc,
+		marketSvc:        marketSvc,
 	}
 }
 
@@ -86,6 +89,27 @@ func (a *analyticsHandler) MarketsPrices(
 
 	return &tdexav1.MarketsPricesReply{
 		MarketsPrices: marketsPrices,
+	}, nil
+}
+
+func (a *analyticsHandler) ListMarketIDs(
+	ctx context.Context,
+	req *tdexav1.ListMarketIDsRequest,
+) (*tdexav1.ListMarketIDsReply, error) {
+	r := make([]application.MarketRequest, 0)
+	for _, v := range req.GetMarketsRequest() {
+		r = append(r, application.MarketRequest{
+			Url:        v.GetUrl(),
+			BaseAsset:  v.GetBaseAsset(),
+			QuoteAsset: v.GetQuoteAsset(),
+		})
+	}
+	ids, err := a.marketSvc.ListMarketIDs(ctx, r)
+	if err != nil {
+		return nil, err
+	}
+	return &tdexav1.ListMarketIDsReply{
+		Ids: ids,
 	}, nil
 }
 

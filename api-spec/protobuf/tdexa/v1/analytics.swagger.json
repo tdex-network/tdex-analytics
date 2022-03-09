@@ -49,6 +49,39 @@
         ]
       }
     },
+    "/v1/markets": {
+      "post": {
+        "summary": "return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs",
+        "operationId": "Analytics_ListMarketIDs",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1ListMarketIDsReply"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/v1ListMarketIDsRequest"
+            }
+          }
+        ],
+        "tags": [
+          "Analytics"
+        ]
+      }
+    },
     "/v1/prices": {
       "post": {
         "summary": "returns all markets and its prices in time series",
@@ -124,6 +157,29 @@
         }
       }
     },
+    "v1ListMarketIDsReply": {
+      "type": "object",
+      "properties": {
+        "ids": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "format": "int64"
+          }
+        }
+      }
+    },
+    "v1ListMarketIDsRequest": {
+      "type": "object",
+      "properties": {
+        "marketsRequest": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1MarketRequest"
+          }
+        }
+      }
+    },
     "v1MarketBalance": {
       "type": "object",
       "properties": {
@@ -192,6 +248,20 @@
             "$ref": "#/definitions/v1MarketPrice"
           },
           "title": "returns list of Market's and their prices"
+        }
+      }
+    },
+    "v1MarketRequest": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string"
+        },
+        "baseAsset": {
+          "type": "string"
+        },
+        "quoteAsset": {
+          "type": "string"
         }
       }
     },
