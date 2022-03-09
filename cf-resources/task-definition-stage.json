@@ -1,189 +1,238 @@
 {
-    "ipcMode": null,
-    "executionRoleArn": "arn:aws:iam::703826750537:role/ecsTaskExecutionRole",
-    "containerDefinitions": [
-      {
-        "dnsSearchDomains": null,
-        "environmentFiles": null,
-        "logConfiguration": {
-          "logDriver": "awslogs",
-          "secretOptions": null,
-          "options": {
-            "awslogs-group": "/ecs/tdex-analytics",
-            "awslogs-region": "eu-central-1",
-            "awslogs-stream-prefix": "ecs"
-          }
+  "ipcMode": null,
+  "executionRoleArn": "arn:aws:iam::703826750537:role/ecsTaskExecutionRole",
+  "containerDefinitions": [
+    {
+      "dnsSearchDomains": null,
+      "environmentFiles": null,
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "secretOptions": null,
+        "options": {
+          "awslogs-group": "/ecs/tdex-analytics",
+          "awslogs-region": "eu-central-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "entryPoint": null,
+      "portMappings": [
+        {
+          "hostPort": 9000,
+          "protocol": "tcp",
+          "containerPort": 9000
+        }
+      ],
+      "command": null,
+      "linuxParameters": null,
+      "cpu": 0,
+      "environment": [],
+      "resourceRequirements": null,
+      "ulimits": null,
+      "dnsServers": null,
+      "mountPoints": [
+        {
+          "readOnly": null,
+          "containerPath": "/app/tls",
+          "sourceVolume": "tls"
+        }
+      ],
+      "workingDirectory": null,
+      "secrets": [
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_HOST::",
+          "name": "TDEXA_DB_HOST"
         },
-        "entryPoint": null,
-        "portMappings": [
-          {
-            "hostPort": 9000,
-            "protocol": "tcp",
-            "containerPort": 9000
-          }
-        ],
-        "command": null,
-        "linuxParameters": null,
-        "cpu": 0,
-        "environment": [],
-        "resourceRequirements": null,
-        "ulimits": null,
-        "dnsServers": null,
-        "mountPoints": [],
-        "workingDirectory": null,
-        "secrets": [
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_HOST::",
-            "name": "TDEXA_DB_HOST"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_INSECURE::",
-            "name": "TDEXA_DB_INSECURE"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_NAME::",
-            "name": "TDEXA_DB_NAME"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_PASSWORD::",
-            "name": "TDEXA_DB_PASS"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_USER::",
-            "name": "TDEXA_DB_USER"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_INIT_BUCKET::",
-            "name": "TDEXA_INFLUXDB_INIT_BUCKET"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_INIT_ORG::",
-            "name": "TDEXA_INFLUXDB_INIT_ORG"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_TOKEN::",
-            "name": "TDEXA_INFLUXDB_TOKEN"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_URL::",
-            "name": "TDEXA_INFLUXDB_URL"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_PRICE_AMOUNT::",
-            "name": "TDEXA_PRICE_AMOUNT"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_REGISTRY_URL::",
-            "name": "TDEXA_REGISTRY_URL"
-          },
-          {
-            "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_TOR_PROXY_URL::",
-            "name": "TDEXA_TOR_PROXY_URL"
-          }
-        ],
-        "dockerSecurityOptions": null,
-        "memory": null,
-        "memoryReservation": null,
-        "volumesFrom": [],
-        "stopTimeout": null,
-        "image": "703826750537.dkr.ecr.eu-central-1.amazonaws.com/tdex-analytics:latest",
-        "startTimeout": null,
-        "firelensConfiguration": null,
-        "dependsOn": null,
-        "disableNetworking": null,
-        "interactive": null,
-        "healthCheck": null,
-        "essential": true,
-        "links": null,
-        "hostname": null,
-        "extraHosts": null,
-        "pseudoTerminal": null,
-        "user": null,
-        "readonlyRootFilesystem": null,
-        "dockerLabels": null,
-        "systemControls": null,
-        "privileged": null,
-        "name": "tdex-analytics"
-      }
-    ],
-    "placementConstraints": [],
-    "memory": "512",
-    "taskRoleArn": "arn:aws:iam::703826750537:role/ecsTaskExecutionRole",
-    "compatibilities": [
-      "EC2",
-      "FARGATE"
-    ],
-    "taskDefinitionArn": "arn:aws:ecs:eu-central-1:703826750537:task-definition/tdex-analytics:1",
-    "family": "tdex-analytics",
-    "requiresAttributes": [
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "ecs.capability.execution-role-awslogs"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "com.amazonaws.ecs.capability.ecr-auth"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "ecs.capability.secrets.asm.environment-variables"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "com.amazonaws.ecs.capability.task-iam-role"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "ecs.capability.execution-role-ecr-pull"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
-      },
-      {
-        "targetId": null,
-        "targetType": null,
-        "value": null,
-        "name": "ecs.capability.task-eni"
-      }
-    ],
-    "pidMode": null,
-    "requiresCompatibilities": [
-      "FARGATE"
-    ],
-    "networkMode": "awsvpc",
-    "runtimePlatform": {
-      "operatingSystemFamily": "LINUX",
-      "cpuArchitecture": null
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_INSECURE::",
+          "name": "TDEXA_DB_INSECURE"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_NAME::",
+          "name": "TDEXA_DB_NAME"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_PASS::",
+          "name": "TDEXA_DB_PASS"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_DB_USER::",
+          "name": "TDEXA_DB_USER"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_INIT_BUCKET::",
+          "name": "TDEXA_INFLUXDB_INIT_BUCKET"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_INIT_ORG::",
+          "name": "TDEXA_INFLUXDB_INIT_ORG"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_TOKEN::",
+          "name": "TDEXA_INFLUXDB_TOKEN"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_INFLUXDB_URL::",
+          "name": "TDEXA_INFLUXDB_URL"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_PRICE_AMOUNT::",
+          "name": "TDEXA_PRICE_AMOUNT"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_REGISTRY_URL::",
+          "name": "TDEXA_REGISTRY_URL"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_TOR_PROXY_URL::",
+          "name": "TDEXA_TOR_PROXY_URL"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_SSL_CERT::",
+          "name": "TDEXA_SSL_CERT"
+        },
+        {
+          "valueFrom": "arn:aws:secretsmanager:eu-central-1:703826750537:secret:tdex-analytics-TFGwOZ:TDEXA_SSL_KEY::",
+          "name": "TDEXA_SSL_KEY"
+        }
+      ],
+      "dockerSecurityOptions": null,
+      "memory": null,
+      "memoryReservation": null,
+      "volumesFrom": [],
+      "stopTimeout": null,
+      "image": "703826750537.dkr.ecr.eu-central-1.amazonaws.com/tdex-analytics:a3beec99750e3e7e08f3fc3d3ebf196c049f802c",
+      "startTimeout": null,
+      "firelensConfiguration": null,
+      "dependsOn": null,
+      "disableNetworking": null,
+      "interactive": null,
+      "healthCheck": null,
+      "essential": true,
+      "links": null,
+      "hostname": null,
+      "extraHosts": null,
+      "pseudoTerminal": null,
+      "user": null,
+      "readonlyRootFilesystem": null,
+      "dockerLabels": null,
+      "systemControls": null,
+      "privileged": null,
+      "name": "tdex-analytics"
+    }
+  ],
+  "placementConstraints": [],
+  "memory": "512",
+  "taskRoleArn": "arn:aws:iam::703826750537:role/ecsTaskExecutionRole",
+  "compatibilities": [
+    "EC2",
+    "FARGATE"
+  ],
+  "taskDefinitionArn": "arn:aws:ecs:eu-central-1:703826750537:task-definition/tdex-analytics:5",
+  "family": "tdex-analytics",
+  "requiresAttributes": [
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
     },
-    "cpu": "256",
-    "revision": 1,
-    "status": "ACTIVE",
-    "inferenceAccelerators": null,
-    "proxyConfiguration": null,
-    "volumes": []
-  }
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.execution-role-awslogs"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.efsAuth"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.ecr-auth"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.secrets.asm.environment-variables"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.efs"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.task-iam-role"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.25"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.execution-role-ecr-pull"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "com.amazonaws.ecs.capability.docker-remote-api.1.18"
+    },
+    {
+      "targetId": null,
+      "targetType": null,
+      "value": null,
+      "name": "ecs.capability.task-eni"
+    }
+  ],
+  "pidMode": null,
+  "requiresCompatibilities": [
+    "FARGATE"
+  ],
+  "networkMode": "awsvpc",
+  "runtimePlatform": {
+    "operatingSystemFamily": "LINUX",
+    "cpuArchitecture": null
+  },
+  "cpu": "256",
+  "revision": 5,
+  "status": "ACTIVE",
+  "inferenceAccelerators": null,
+  "proxyConfiguration": null,
+  "volumes": [
+    {
+      "fsxWindowsFileServerVolumeConfiguration": null,
+      "efsVolumeConfiguration": {
+        "transitEncryptionPort": null,
+        "fileSystemId": "fs-8c219fd7",
+        "authorizationConfig": {
+          "iam": "DISABLED",
+          "accessPointId": null
+        },
+        "transitEncryption": "DISABLED",
+        "rootDirectory": "/"
+      },
+      "name": "tls",
+      "host": null,
+      "dockerVolumeConfiguration": null
+    }
+  ]
+}
