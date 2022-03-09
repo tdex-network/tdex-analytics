@@ -145,8 +145,11 @@ func (s *server) Start(ctx context.Context, stop context.CancelFunc) <-chan erro
 }
 
 func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
-	analyticsHandler := grpchandler.NewAnalyticsHandler(s.marketBalanceSvc, s.marketPriceSvc)
-	marketsHandler := grpchandler.NewMarketHandler(s.marketSvc)
+	analyticsHandler := grpchandler.NewAnalyticsHandler(
+		s.marketBalanceSvc,
+		s.marketPriceSvc,
+		s.marketSvc,
+	)
 
 	chainInterceptorSvc, err := interceptor.NewService()
 	if err != nil {
@@ -154,10 +157,15 @@ func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 	}
 
 	opts := chainInterceptorSvc.CreateServerOpts()
+	if s.opts.tlsSecure {
+		if err != nil {
+			return nil, err
+		}
+		opts = append(chainInterceptorSvc.CreateServerOpts(), s.opts.grpcServerCredsOpts...)
+	}
 
 	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
-	tdexav1.RegisterMarketServer(tdexaGrpcServer, marketsHandler)
 
 	return tdexaGrpcServer, nil
 }

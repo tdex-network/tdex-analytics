@@ -54,14 +54,21 @@ func main() {
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		config.GetString(config.JobPeriodInMinutes),
 	)
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
+		config.GetString(config.JobPeriodInMinutes),
 	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()
+	certFile := config.GetString(config.SSLCertPathKey)
+	keyFile := config.GetString(config.SSLKeyPathKey)
+	if certFile != "" && keyFile != "" {
+		opts = tdexagrpc.WithTls(certFile, keyFile)
+	}
 
 	marketSvc := application.NewMarketService(marketRepository)
 

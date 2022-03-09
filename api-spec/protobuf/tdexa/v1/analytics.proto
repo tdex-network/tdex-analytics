@@ -22,6 +22,13 @@ service Analytics {
       body: "*"
     };
   }
+  // return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
+  rpc ListMarketIDs(ListMarketIDsRequest) returns (ListMarketIDsReply) {
+    option (google.api.http) = {
+      post: "/v1/markets"
+      body: "*"
+    };
+  }
 }
 
 message MarketsBalancesRequest {
@@ -99,4 +106,18 @@ enum PredefinedPeriod {
   LAST_3_MONTHS = 4;
   YEAR_TO_DATE = 5;
   ALL = 6;
+}
+
+message ListMarketIDsRequest {
+  repeated MarketRequest markets_request = 1;
+}
+
+message ListMarketIDsReply {
+  repeated int64 ids = 1;
+}
+
+message MarketRequest {
+  string url = 1;
+  string base_asset = 2;
+  string quote_asset = 3;
 }
