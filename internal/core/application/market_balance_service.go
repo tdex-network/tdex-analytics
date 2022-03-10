@@ -27,6 +27,7 @@ type MarketBalanceService interface {
 	GetBalances(
 		ctx context.Context,
 		timeRange TimeRange,
+		page Page,
 		marketIDs ...string,
 	) (*MarketsBalances, error)
 	// StartFetchingBalancesJob starts cron job that will periodically fetch and store balances for all markets
@@ -76,6 +77,7 @@ func (m *marketBalanceService) InsertBalance(
 func (m *marketBalanceService) GetBalances(
 	ctx context.Context,
 	timeRange TimeRange,
+	page Page,
 	marketIDs ...string,
 ) (*MarketsBalances, error) {
 	result := make(map[string][]Balance)
@@ -89,6 +91,7 @@ func (m *marketBalanceService) GetBalances(
 		ctx,
 		startTime,
 		endTime,
+		page.ToDomain(),
 		marketIDs...,
 	)
 	if err != nil {
