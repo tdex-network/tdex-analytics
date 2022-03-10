@@ -62,7 +62,7 @@ message MarketsPricesRequest {
   repeated string market_ids = 2;
   // reference fiat currency to which base and quote will be converted
   string reference_currency = 3;
-  // pagination
+  // pagination. Leave empty to return all
   Page page = 4;
 }
 message MarketsPricesReply {
