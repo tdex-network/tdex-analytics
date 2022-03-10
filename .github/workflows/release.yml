@@ -27,7 +27,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v2
         with:
-          go-version: 1.16.x
+          go-version: 1.17.x
 
       - name: Cache Go modules
         uses: actions/cache@v1
@@ -36,13 +36,6 @@ jobs:
           key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
             ${{ runner.os }}-go-
-
-      # This because https://github.com/plentico/osxcross-target/issues/2#issuecomment-815850611
-      - name: Downgrade libssl
-        run: |
-          echo 'deb http://security.ubuntu.com/ubuntu bionic-security main' | sudo tee -a /etc/apt/sources.list
-          sudo apt update && apt-cache policy libssl1.0-dev
-          sudo apt-get install libssl1.0-dev
 
       - name: Import GPG key
         id: import_gpg
