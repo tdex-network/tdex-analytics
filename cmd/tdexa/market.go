@@ -33,14 +33,14 @@ var marketsCmd = &cli.Command{
 func listMarkets(ctx *cli.Context) error {
 	filters := ctx.StringSlice("filter")
 
-	filterReq := make([]*tdexav1.MarketRequest, 0, len(filters))
+	filterReq := make([]*tdexav1.MarketProvider, 0, len(filters))
 	for _, v := range filters {
 		tmp := strings.Split(strings.TrimSpace(v), ",")
 		if len(tmp) != 3 {
 			return errors.New("provide url, base_asset, quote_asset")
 		}
 
-		filterReq = append(filterReq, &tdexav1.MarketRequest{
+		filterReq = append(filterReq, &tdexav1.MarketProvider{
 			Url:        tmp[0],
 			BaseAsset:  tmp[1],
 			QuoteAsset: tmp[2],
@@ -60,12 +60,12 @@ func listMarkets(ctx *cli.Context) error {
 		PageSize:   pageSize,
 	}
 
-	req := &tdexav1.ListMarketIDsRequest{
-		MarketsRequest: filterReq,
-		Page:           page,
+	req := &tdexav1.ListMarketsRequest{
+		MarketProviders: filterReq,
+		Page:            page,
 	}
 
-	resp, err := client.ListMarketIDs(context.Background(), req)
+	resp, err := client.ListMarkets(context.Background(), req)
 	if err != nil {
 		return err
 	}

@@ -6,11 +6,11 @@ import (
 )
 
 type MarketService interface {
-	ListMarketIDs(
+	ListMarkets(
 		ctx context.Context,
-		req []MarketRequest,
+		req []MarketProvider,
 		page Page,
-	) ([]int64, error)
+	) ([]Market, error)
 }
 
 type marketService struct {
@@ -26,12 +26,12 @@ func NewMarketService(
 	}
 }
 
-func (m marketService) ListMarketIDs(
+func (m marketService) ListMarkets(
 	ctx context.Context,
-	req []MarketRequest,
+	req []MarketProvider,
 	page Page,
-) ([]int64, error) {
-	resp := make([]int64, 0)
+) ([]Market, error) {
+	resp := make([]Market, 0)
 	filter := make([]domain.Filter, 0)
 
 	for _, v := range req {
@@ -51,7 +51,12 @@ func (m marketService) ListMarketIDs(
 	}
 
 	for _, v := range markets {
-		resp = append(resp, int64(v.ID))
+		resp = append(resp, Market{
+			ID:         v.ID,
+			Url:        v.Url,
+			BaseAsset:  v.BaseAsset,
+			QuoteAsset: v.QuoteAsset,
+		})
 	}
 
 	return resp, nil

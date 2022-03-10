@@ -27,7 +27,7 @@ type AnalyticsClient interface {
 	// returns all markets and its prices in time series
 	MarketsPrices(ctx context.Context, in *MarketsPricesRequest, opts ...grpc.CallOption) (*MarketsPricesReply, error)
 	// return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
-	ListMarketIDs(ctx context.Context, in *ListMarketIDsRequest, opts ...grpc.CallOption) (*ListMarketIDsReply, error)
+	ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsReply, error)
 }
 
 type analyticsClient struct {
@@ -56,9 +56,9 @@ func (c *analyticsClient) MarketsPrices(ctx context.Context, in *MarketsPricesRe
 	return out, nil
 }
 
-func (c *analyticsClient) ListMarketIDs(ctx context.Context, in *ListMarketIDsRequest, opts ...grpc.CallOption) (*ListMarketIDsReply, error) {
-	out := new(ListMarketIDsReply)
-	err := c.cc.Invoke(ctx, "/tdexa.v1.Analytics/ListMarketIDs", in, out, opts...)
+func (c *analyticsClient) ListMarkets(ctx context.Context, in *ListMarketsRequest, opts ...grpc.CallOption) (*ListMarketsReply, error) {
+	out := new(ListMarketsReply)
+	err := c.cc.Invoke(ctx, "/tdexa.v1.Analytics/ListMarkets", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +74,7 @@ type AnalyticsServer interface {
 	// returns all markets and its prices in time series
 	MarketsPrices(context.Context, *MarketsPricesRequest) (*MarketsPricesReply, error)
 	// return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
-	ListMarketIDs(context.Context, *ListMarketIDsRequest) (*ListMarketIDsReply, error)
+	ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsReply, error)
 }
 
 // UnimplementedAnalyticsServer should be embedded to have forward compatible implementations.
@@ -87,8 +87,8 @@ func (UnimplementedAnalyticsServer) MarketsBalances(context.Context, *MarketsBal
 func (UnimplementedAnalyticsServer) MarketsPrices(context.Context, *MarketsPricesRequest) (*MarketsPricesReply, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MarketsPrices not implemented")
 }
-func (UnimplementedAnalyticsServer) ListMarketIDs(context.Context, *ListMarketIDsRequest) (*ListMarketIDsReply, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ListMarketIDs not implemented")
+func (UnimplementedAnalyticsServer) ListMarkets(context.Context, *ListMarketsRequest) (*ListMarketsReply, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListMarkets not implemented")
 }
 
 // UnsafeAnalyticsServer may be embedded to opt out of forward compatibility for this service.
@@ -138,20 +138,20 @@ func _Analytics_MarketsPrices_Handler(srv interface{}, ctx context.Context, dec 
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Analytics_ListMarketIDs_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListMarketIDsRequest)
+func _Analytics_ListMarkets_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListMarketsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AnalyticsServer).ListMarketIDs(ctx, in)
+		return srv.(AnalyticsServer).ListMarkets(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/tdexa.v1.Analytics/ListMarketIDs",
+		FullMethod: "/tdexa.v1.Analytics/ListMarkets",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AnalyticsServer).ListMarketIDs(ctx, req.(*ListMarketIDsRequest))
+		return srv.(AnalyticsServer).ListMarkets(ctx, req.(*ListMarketsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -172,8 +172,8 @@ var Analytics_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Analytics_MarketsPrices_Handler,
 		},
 		{
-			MethodName: "ListMarketIDs",
-			Handler:    _Analytics_ListMarketIDs_Handler,
+			MethodName: "ListMarkets",
+			Handler:    _Analytics_ListMarkets_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

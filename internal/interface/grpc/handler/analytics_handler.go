@@ -94,24 +94,37 @@ func (a *analyticsHandler) MarketsPrices(
 	}, nil
 }
 
-func (a *analyticsHandler) ListMarketIDs(
+func (a *analyticsHandler) ListMarkets(
 	ctx context.Context,
-	req *tdexav1.ListMarketIDsRequest,
-) (*tdexav1.ListMarketIDsReply, error) {
-	r := make([]application.MarketRequest, 0)
-	for _, v := range req.GetMarketsRequest() {
-		r = append(r, application.MarketRequest{
+	req *tdexav1.ListMarketsRequest,
+) (*tdexav1.ListMarketsReply, error) {
+	r := make([]application.MarketProvider, 0)
+	for _, v := range req.GetMarketProviders() {
+		r = append(r, application.MarketProvider{
 			Url:        v.GetUrl(),
 			BaseAsset:  v.GetBaseAsset(),
 			QuoteAsset: v.GetQuoteAsset(),
 		})
 	}
-	ids, err := a.marketSvc.ListMarketIDs(ctx, r, parsePage(req.GetPage()))
+	markets, err := a.marketSvc.ListMarkets(ctx, r, parsePage(req.GetPage()))
 	if err != nil {
 		return nil, err
 	}
-	return &tdexav1.ListMarketIDsReply{
-		Ids: ids,
+
+	resp := make([]*tdexav1.MarketIDInfo, 0)
+	for _, v := range markets {
+		resp = append(resp, &tdexav1.MarketIDInfo{
+			Id: uint64(v.ID),
+			MarketProvider: &tdexav1.MarketProvider{
+				Url:        v.Url,
+				BaseAsset:  v.BaseAsset,
+				QuoteAsset: v.QuoteAsset,
+			},
+		})
+	}
+
+	return &tdexav1.ListMarketsReply{
+		Markets: resp,
 	}, nil
 }
 

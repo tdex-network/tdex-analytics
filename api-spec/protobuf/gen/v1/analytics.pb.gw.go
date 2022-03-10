@@ -99,8 +99,8 @@ func local_request_Analytics_MarketsPrices_0(ctx context.Context, marshaler runt
 
 }
 
-func request_Analytics_ListMarketIDs_0(ctx context.Context, marshaler runtime.Marshaler, client AnalyticsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListMarketIDsRequest
+func request_Analytics_ListMarkets_0(ctx context.Context, marshaler runtime.Marshaler, client AnalyticsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListMarketsRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -111,13 +111,13 @@ func request_Analytics_ListMarketIDs_0(ctx context.Context, marshaler runtime.Ma
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := client.ListMarketIDs(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
+	msg, err := client.ListMarkets(ctx, &protoReq, grpc.Header(&metadata.HeaderMD), grpc.Trailer(&metadata.TrailerMD))
 	return msg, metadata, err
 
 }
 
-func local_request_Analytics_ListMarketIDs_0(ctx context.Context, marshaler runtime.Marshaler, server AnalyticsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
-	var protoReq ListMarketIDsRequest
+func local_request_Analytics_ListMarkets_0(ctx context.Context, marshaler runtime.Marshaler, server AnalyticsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+	var protoReq ListMarketsRequest
 	var metadata runtime.ServerMetadata
 
 	newReader, berr := utilities.IOReaderFactory(req.Body)
@@ -128,7 +128,7 @@ func local_request_Analytics_ListMarketIDs_0(ctx context.Context, marshaler runt
 		return nil, metadata, status.Errorf(codes.InvalidArgument, "%v", err)
 	}
 
-	msg, err := server.ListMarketIDs(ctx, &protoReq)
+	msg, err := server.ListMarkets(ctx, &protoReq)
 	return msg, metadata, err
 
 }
@@ -185,18 +185,18 @@ func RegisterAnalyticsHandlerServer(ctx context.Context, mux *runtime.ServeMux, 
 
 	})
 
-	mux.Handle("POST", pattern_Analytics_ListMarketIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Analytics_ListMarkets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/tdexa.v1.Analytics/ListMarketIDs", runtime.WithHTTPPathPattern("/v1/markets"))
+		rctx, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/tdexa.v1.Analytics/ListMarkets", runtime.WithHTTPPathPattern("/v1/markets"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_Analytics_ListMarketIDs_0(rctx, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Analytics_ListMarkets_0(rctx, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
@@ -204,7 +204,7 @@ func RegisterAnalyticsHandlerServer(ctx context.Context, mux *runtime.ServeMux, 
 			return
 		}
 
-		forward_Analytics_ListMarketIDs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Analytics_ListMarkets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -289,23 +289,23 @@ func RegisterAnalyticsHandlerClient(ctx context.Context, mux *runtime.ServeMux, 
 
 	})
 
-	mux.Handle("POST", pattern_Analytics_ListMarketIDs_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle("POST", pattern_Analytics_ListMarkets_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/tdexa.v1.Analytics/ListMarketIDs", runtime.WithHTTPPathPattern("/v1/markets"))
+		rctx, err := runtime.AnnotateContext(ctx, mux, req, "/tdexa.v1.Analytics/ListMarkets", runtime.WithHTTPPathPattern("/v1/markets"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_Analytics_ListMarketIDs_0(rctx, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Analytics_ListMarkets_0(rctx, inboundMarshaler, client, req, pathParams)
 		ctx = runtime.NewServerMetadataContext(ctx, md)
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
 
-		forward_Analytics_ListMarketIDs_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Analytics_ListMarkets_0(ctx, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 
 	})
 
@@ -317,7 +317,7 @@ var (
 
 	pattern_Analytics_MarketsPrices_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "prices"}, ""))
 
-	pattern_Analytics_ListMarketIDs_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "markets"}, ""))
+	pattern_Analytics_ListMarkets_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1}, []string{"v1", "markets"}, ""))
 )
 
 var (
@@ -325,5 +325,5 @@ var (
 
 	forward_Analytics_MarketsPrices_0 = runtime.ForwardResponseMessage
 
-	forward_Analytics_ListMarketIDs_0 = runtime.ForwardResponseMessage
+	forward_Analytics_ListMarkets_0 = runtime.ForwardResponseMessage
 )

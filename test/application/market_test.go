@@ -11,9 +11,9 @@ func (a *AppSvcTestSuit) TestGetMarketsForFilter() {
 		Size:   10,
 	}
 
-	markets, err := marketSvc.ListMarketIDs(
+	markets, err := marketSvc.ListMarkets(
 		context.Background(),
-		[]application.MarketRequest{},
+		[]application.MarketProvider{},
 		page,
 	)
 	if err != nil {
@@ -22,9 +22,9 @@ func (a *AppSvcTestSuit) TestGetMarketsForFilter() {
 
 	a.Equal(6, len(markets))
 
-	markets, err = marketSvc.ListMarketIDs(
+	markets, err = marketSvc.ListMarkets(
 		context.Background(),
-		[]application.MarketRequest{
+		[]application.MarketProvider{
 			{
 				Url:        "dummyurl1",
 				BaseAsset:  "dummybaseasset1",
