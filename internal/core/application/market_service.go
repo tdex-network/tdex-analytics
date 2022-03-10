@@ -6,7 +6,11 @@ import (
 )
 
 type MarketService interface {
-	ListMarketIDs(ctx context.Context, req []MarketRequest) ([]int64, error)
+	ListMarketIDs(
+		ctx context.Context,
+		req []MarketRequest,
+		page Page,
+	) ([]int64, error)
 }
 
 type marketService struct {
@@ -25,6 +29,7 @@ func NewMarketService(
 func (m marketService) ListMarketIDs(
 	ctx context.Context,
 	req []MarketRequest,
+	page Page,
 ) ([]int64, error) {
 	resp := make([]int64, 0)
 	filter := make([]domain.Filter, 0)
@@ -37,7 +42,10 @@ func (m marketService) ListMarketIDs(
 		filter = append(filter, v.toDomain())
 	}
 
-	markets, err := m.marketRepository.GetAllMarketsForFilter(ctx, filter)
+	markets, err := m.marketRepository.GetAllMarketsForFilter(
+		ctx,
+		filter, page.ToDomain(),
+	)
 	if err != nil {
 		return nil, err
 	}

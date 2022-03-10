@@ -54,13 +54,83 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 		}
 	}
 
-	startTime := time.Date(application.StartYear, 1, 1, 0, 0, 0, 0, time.UTC)
-	endTime := time.Date(application.StartYear, 12, 1, 0, 0, 0, 0, time.UTC)
+	startTime := time.Date(
+		application.StartYear,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	endTime := time.Date(
+		application.StartYear,
+		12,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
 
-	marketsBalances, err := dbSvc.GetBalancesForMarkets(ctx, startTime, endTime, []string{"90000"}...)
+	page := domain.Page{
+		Number: 1,
+		Size:   10,
+	}
+
+	marketsBalances, err := dbSvc.GetBalancesForMarkets(
+		ctx,
+		startTime,
+		endTime,
+		page,
+		[]string{"90000"}...,
+	)
 	if err != nil {
 		idb.FailNow(err.Error())
 	}
 
 	idb.Equal(10, len(marketsBalances["90000"]))
+}
+
+func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
+	startTime := time.Date(
+		application.StartYear,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	endTime := time.Date(
+		application.StartYear,
+		12,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	page := domain.Page{
+		Number: 1,
+		Size:   5,
+	}
+
+	marketsBalances, err := dbSvc.GetBalancesForMarkets(
+		context.Background(),
+		startTime,
+		endTime,
+		page,
+		[]string{"1"}...,
+	)
+	if err != nil {
+		idb.FailNow(err.Error())
+	}
+
+	idb.Equal(5, len(marketsBalances["1"]))
 }

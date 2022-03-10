@@ -17,6 +17,16 @@ var marketsCmd = &cli.Command{
 			Name:  "filter",
 			Usage: "(Required) market provider url, base_asset, quote_asset delimited by ,",
 		},
+		&cli.Uint64Flag{
+			Name:  "page_num",
+			Usage: "the number of the page to be listed. If omitted, the entire list is returned",
+			Value: 1,
+		},
+		&cli.Uint64Flag{
+			Name:  "page_size",
+			Usage: "the size of the page",
+			Value: 10,
+		},
 	},
 }
 
@@ -43,8 +53,16 @@ func listMarkets(ctx *cli.Context) error {
 	}
 	defer cleanup()
 
+	pageNum := ctx.Int64("page_num")
+	pageSize := ctx.Int64("page_size")
+	page := &tdexav1.Page{
+		PageNumber: pageNum,
+		PageSize:   pageSize,
+	}
+
 	req := &tdexav1.ListMarketIDsRequest{
 		MarketsRequest: filterReq,
+		Page:           page,
 	}
 
 	resp, err := client.ListMarketIDs(context.Background(), req)

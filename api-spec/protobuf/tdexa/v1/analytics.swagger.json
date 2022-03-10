@@ -177,6 +177,9 @@
           "items": {
             "$ref": "#/definitions/v1MarketRequest"
           }
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page"
         }
       }
     },
@@ -290,6 +293,10 @@
             "type": "string"
           },
           "title": "fetch balances for specific one or more market's, if no market_id is passed balances will be fetched for all"
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page",
+          "title": "pagination"
         }
       }
     },
@@ -322,6 +329,23 @@
         "referenceCurrency": {
           "type": "string",
           "title": "reference fiat currency to which base and quote will be converted"
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page",
+          "title": "pagination"
+        }
+      }
+    },
+    "v1Page": {
+      "type": "object",
+      "properties": {
+        "pageNumber": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pageSize": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

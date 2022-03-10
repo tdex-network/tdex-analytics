@@ -32,6 +32,7 @@ func (a *analyticsHandler) MarketsBalances(
 	mb, err := a.marketBalanceSvc.GetBalances(
 		ctx,
 		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
+		parsePage(req.GetPage()),
 		req.GetMarketIds()...,
 	)
 	if err != nil {
@@ -65,6 +66,7 @@ func (a *analyticsHandler) MarketsPrices(
 	mb, err := a.marketPriceSvc.GetPrices(
 		ctx,
 		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
+		parsePage(req.GetPage()),
 		req.GetMarketIds()...,
 	)
 	if err != nil {
@@ -104,7 +106,7 @@ func (a *analyticsHandler) ListMarketIDs(
 			QuoteAsset: v.GetQuoteAsset(),
 		})
 	}
-	ids, err := a.marketSvc.ListMarketIDs(ctx, r)
+	ids, err := a.marketSvc.ListMarketIDs(ctx, r, parsePage(req.GetPage()))
 	if err != nil {
 		return nil, err
 	}
@@ -131,5 +133,18 @@ func grpcTimeRangeToAppTimeRange(timeRange *tdexav1.TimeRange) application.TimeR
 	return application.TimeRange{
 		PredefinedPeriod: predefinedPeriod,
 		CustomPeriod:     customPeriod,
+	}
+}
+
+func parsePage(p *tdexav1.Page) application.Page {
+	if p == nil {
+		return application.Page{
+			Number: 0,
+			Size:   0,
+		}
+	}
+	return application.Page{
+		Number: int(p.PageNumber),
+		Size:   int(p.PageSize),
 	}
 }

@@ -34,6 +34,16 @@ var listBalancesCmd = &cli.Command{
 				"       6 -> all",
 			Value: 2,
 		},
+		&cli.Uint64Flag{
+			Name:  "page_num",
+			Usage: "the number of the page to be listed. If omitted, the entire list is returned",
+			Value: 1,
+		},
+		&cli.Uint64Flag{
+			Name:  "page_size",
+			Usage: "the size of the page",
+			Value: 10,
+		},
 	},
 }
 
@@ -56,12 +66,20 @@ func listBalancesAction(ctx *cli.Context) error {
 		predefinedPeriod = tdexav1.PredefinedPeriod(pp)
 	}
 
+	pageNum := ctx.Int64("page_num")
+	pageSize := ctx.Int64("page_size")
+	page := &tdexav1.Page{
+		PageNumber: pageNum,
+		PageSize:   pageSize,
+	}
+
 	req := &tdexav1.MarketsBalancesRequest{
 		TimeRange: &tdexav1.TimeRange{
 			PredefinedPeriod: predefinedPeriod,
 			CustomPeriod:     customPeriod,
 		},
 		MarketIds: marketIDs,
+		Page:      page,
 	}
 
 	client, cleanup, err := getAnalyticsClient()

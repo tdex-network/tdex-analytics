@@ -11,6 +11,7 @@ type MarketPriceRepository interface {
 		ctx context.Context,
 		startTime time.Time,
 		endTime time.Time,
+		page Page,
 		marketIDs ...string,
 	) (map[string][]MarketPrice, error)
 }

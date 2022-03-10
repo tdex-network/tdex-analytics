@@ -6,9 +6,15 @@ import (
 )
 
 func (a *AppSvcTestSuit) TestGetMarketsForFilter() {
+	page := application.Page{
+		Number: 1,
+		Size:   10,
+	}
+
 	markets, err := marketSvc.ListMarketIDs(
 		context.Background(),
 		[]application.MarketRequest{},
+		page,
 	)
 	if err != nil {
 		a.FailNow(err.Error())
@@ -25,6 +31,7 @@ func (a *AppSvcTestSuit) TestGetMarketsForFilter() {
 				QuoteAsset: "dummyquoteasset1",
 			},
 		},
+		page,
 	)
 	a.Equal(
 		"BaseAsset: asset is not in hex format; QuoteAsset: asset is not in hex format; Url: must be a valid URL.",

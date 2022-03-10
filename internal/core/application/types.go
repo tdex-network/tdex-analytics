@@ -272,3 +272,9 @@ func (m *MarketRequest) toDomain() domain.Filter {
 		QuoteAsset: m.QuoteAsset,
 	}
 }
+
+type Page domain.Page
+
+func (p *Page) ToDomain() domain.Page {
+	return domain.NewPage(p.Number, p.Size)
+}
