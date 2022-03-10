@@ -58,12 +58,20 @@ func (p *postgresDbService) GetAllMarkets(
 func (p *postgresDbService) GetAllMarketsForFilter(
 	ctx context.Context,
 	filter []domain.Filter,
+	page domain.Page,
 ) ([]domain.Market, error) {
 	res := make([]domain.Market, 0)
-
+	limit := page.Size
+	offset := page.Number*page.Size - page.Size
+	pagination := fmt.Sprintf(
+		" ORDER by market.market_id DESC LIMIT %v OFFSET %v",
+		limit,
+		offset,
+	)
 	query, values := generateQueryAndValues(filter)
+	queryWithPagination := fmt.Sprintf("%v %v", query, pagination)
 
-	rows, err := p.db.QueryContext(ctx, query, values...)
+	rows, err := p.db.QueryContext(ctx, queryWithPagination, values...)
 	if err != nil {
 		return nil, err
 	}

@@ -52,12 +52,12 @@
     "/v1/markets": {
       "post": {
         "summary": "return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs",
-        "operationId": "Analytics_ListMarketIDs",
+        "operationId": "Analytics_ListMarkets",
         "responses": {
           "200": {
             "description": "A successful response.",
             "schema": {
-              "$ref": "#/definitions/v1ListMarketIDsReply"
+              "$ref": "#/definitions/v1ListMarketsReply"
             }
           },
           "default": {
@@ -73,7 +73,7 @@
             "in": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/v1ListMarketIDsRequest"
+              "$ref": "#/definitions/v1ListMarketsRequest"
             }
           }
         ],
@@ -157,26 +157,28 @@
         }
       }
     },
-    "v1ListMarketIDsReply": {
+    "v1ListMarketsReply": {
       "type": "object",
       "properties": {
-        "ids": {
+        "markets": {
           "type": "array",
           "items": {
-            "type": "string",
-            "format": "int64"
+            "$ref": "#/definitions/v1MarketIDInfo"
           }
         }
       }
     },
-    "v1ListMarketIDsRequest": {
+    "v1ListMarketsRequest": {
       "type": "object",
       "properties": {
-        "marketsRequest": {
+        "marketProviders": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/v1MarketRequest"
+            "$ref": "#/definitions/v1MarketProvider"
           }
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page"
         }
       }
     },
@@ -207,6 +209,18 @@
           "items": {
             "$ref": "#/definitions/v1MarketBalance"
           }
+        }
+      }
+    },
+    "v1MarketIDInfo": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "format": "uint64"
+        },
+        "marketProvider": {
+          "$ref": "#/definitions/v1MarketProvider"
         }
       }
     },
@@ -251,7 +265,7 @@
         }
       }
     },
-    "v1MarketRequest": {
+    "v1MarketProvider": {
       "type": "object",
       "properties": {
         "url": {
@@ -290,6 +304,10 @@
             "type": "string"
           },
           "title": "fetch balances for specific one or more market's, if no market_id is passed balances will be fetched for all"
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page",
+          "title": "pagination"
         }
       }
     },
@@ -322,6 +340,23 @@
         "referenceCurrency": {
           "type": "string",
           "title": "reference fiat currency to which base and quote will be converted"
+        },
+        "page": {
+          "$ref": "#/definitions/v1Page",
+          "title": "pagination"
+        }
+      }
+    },
+    "v1Page": {
+      "type": "object",
+      "properties": {
+        "pageNumber": {
+          "type": "string",
+          "format": "int64"
+        },
+        "pageSize": {
+          "type": "string",
+          "format": "int64"
         }
       }
     },

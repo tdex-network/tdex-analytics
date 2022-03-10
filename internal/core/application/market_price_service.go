@@ -22,6 +22,7 @@ type MarketPriceService interface {
 	GetPrices(
 		ctx context.Context,
 		timeRange TimeRange,
+		page Page,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
 	// StartFetchingPricesJob starts cron job that will periodically fetch and store prices for all markets
@@ -70,6 +71,7 @@ func (m *marketPriceService) InsertPrice(
 func (m *marketPriceService) GetPrices(
 	ctx context.Context,
 	timeRange TimeRange,
+	page Page,
 	marketIDs ...string,
 ) (*MarketsPrices, error) {
 	result := make(map[string][]Price)
@@ -83,6 +85,7 @@ func (m *marketPriceService) GetPrices(
 		ctx,
 		startTime,
 		endTime,
+		page.ToDomain(),
 		marketIDs...,
 	)
 	if err != nil {

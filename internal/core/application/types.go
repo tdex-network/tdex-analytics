@@ -250,13 +250,13 @@ func (t *TimeRange) getStartAndEndTime(now time.Time) (startTime time.Time, endT
 	return
 }
 
-type MarketRequest struct {
+type MarketProvider struct {
 	Url        string
 	BaseAsset  string
 	QuoteAsset string
 }
 
-func (m *MarketRequest) validate() error {
+func (m *MarketProvider) validate() error {
 	return validation.ValidateStruct(
 		m,
 		validation.Field(&m.Url, is.URL),
@@ -265,10 +265,23 @@ func (m *MarketRequest) validate() error {
 	)
 }
 
-func (m *MarketRequest) toDomain() domain.Filter {
+func (m *MarketProvider) toDomain() domain.Filter {
 	return domain.Filter{
 		Url:        m.Url,
 		BaseAsset:  m.BaseAsset,
 		QuoteAsset: m.QuoteAsset,
 	}
+}
+
+type Page domain.Page
+
+func (p *Page) ToDomain() domain.Page {
+	return domain.NewPage(p.Number, p.Size)
+}
+
+type Market struct {
+	ID         int
+	Url        string
+	BaseAsset  string
+	QuoteAsset string
 }

@@ -34,7 +34,16 @@ func (s *PgDbTestSuite) TestInsertAndFetchMarket() {
 }
 
 func (s *PgDbTestSuite) TestGetMarketsForFilter() {
-	markets, err := pgDbSvc.GetAllMarketsForFilter(context.Background(), nil)
+	page := domain.Page{
+		Number: 1,
+		Size:   10,
+	}
+
+	markets, err := pgDbSvc.GetAllMarketsForFilter(
+		context.Background(),
+		nil,
+		page,
+	)
 	if err != nil {
 		s.FailNow(err.Error())
 	}
@@ -55,6 +64,7 @@ func (s *PgDbTestSuite) TestGetMarketsForFilter() {
 				QuoteAsset: "dummyquoteasset2",
 			},
 		},
+		page,
 	)
 	if err != nil {
 		s.FailNow(err.Error())
@@ -71,6 +81,7 @@ func (s *PgDbTestSuite) TestGetMarketsForFilter() {
 				QuoteAsset: "dummyquoteasset1",
 			},
 		},
+		page,
 	)
 	if err != nil {
 		s.FailNow(err.Error())
@@ -97,6 +108,7 @@ func (s *PgDbTestSuite) TestGetMarketsForFilter() {
 				QuoteAsset: "dummyquoteasset4",
 			},
 		},
+		page,
 	)
 	if err != nil {
 		s.FailNow(err.Error())
@@ -123,10 +135,45 @@ func (s *PgDbTestSuite) TestGetMarketsForFilter() {
 				QuoteAsset: "dummyquoteasset2",
 			},
 		},
+		page,
 	)
 	if err != nil {
 		s.FailNow(err.Error())
 	}
 
 	s.Equal(2, len(markets))
+}
+
+func (s *PgDbTestSuite) TestGetMarketsForFilterWithPagination() {
+	page := domain.Page{
+		Number: 1,
+		Size:   1,
+	}
+
+	markets, err := pgDbSvc.GetAllMarketsForFilter(
+		context.Background(),
+		[]domain.Filter{
+			{
+				Url:        "dummyurl1",
+				BaseAsset:  "dummybaseasset1",
+				QuoteAsset: "dummyquoteasset1",
+			},
+			{
+				Url:        "dummyurl3",
+				BaseAsset:  "dummybaseasset3",
+				QuoteAsset: "dummyquoteasset3",
+			},
+			{
+				Url:        "dummyurl4",
+				BaseAsset:  "dummybaseasset3",
+				QuoteAsset: "dummyquoteasset2",
+			},
+		},
+		page,
+	)
+	if err != nil {
+		s.FailNow(err.Error())
+	}
+
+	s.Equal(1, len(markets))
 }

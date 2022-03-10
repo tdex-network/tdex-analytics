@@ -169,7 +169,14 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 	}
 	for _, tt := range tests {
 		a.Run(tt.name, func() {
-			got, err := marketPriceSvc.GetPrices(tt.args.ctx, tt.args.timeRange, tt.args.marketIDs...)
+			got, err := marketPriceSvc.GetPrices(
+				tt.args.ctx,
+				tt.args.timeRange,
+				application.Page{
+					Number: 1,
+					Size:   10000000,
+				},
+				tt.args.marketIDs...)
 			if (err != nil) != tt.wantErr {
 				a.T().Errorf("GetPrices() error = %v, wantErr %v", err, tt.wantErr)
 				return

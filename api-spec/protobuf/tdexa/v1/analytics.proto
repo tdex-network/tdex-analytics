@@ -23,7 +23,7 @@ service Analytics {
     };
   }
   // return market id's to be used, if needed, as filter for MarketsBalances/MarketsPrices rpcs
-  rpc ListMarketIDs(ListMarketIDsRequest) returns (ListMarketIDsReply) {
+  rpc ListMarkets(ListMarketsRequest) returns (ListMarketsReply) {
     option (google.api.http) = {
       post: "/v1/markets"
       body: "*"
@@ -36,6 +36,8 @@ message MarketsBalancesRequest {
   TimeRange time_range = 1;
   // fetch balances for specific one or more market's, if no market_id is passed balances will be fetched for all
   repeated string market_ids = 2;
+  // pagination
+  Page page = 3;
 }
 message MarketsBalancesReply {
   // returns map of market_id and its balances sorted by time ASC
@@ -60,6 +62,8 @@ message MarketsPricesRequest {
   repeated string market_ids = 2;
   // reference fiat currency to which base and quote will be converted
   string reference_currency = 3;
+  // pagination. Leave empty to return all
+  Page page = 4;
 }
 message MarketsPricesReply {
   // returns map of market_id and its prices sorted by time ASC
@@ -108,16 +112,27 @@ enum PredefinedPeriod {
   ALL = 6;
 }
 
-message ListMarketIDsRequest {
-  repeated MarketRequest markets_request = 1;
+message ListMarketsRequest {
+  repeated MarketProvider market_providers = 1;
+  Page page = 2;
 }
 
-message ListMarketIDsReply {
-  repeated int64 ids = 1;
+message ListMarketsReply {
+  repeated MarketIDInfo markets = 1;
 }
 
-message MarketRequest {
+message MarketIDInfo {
+  uint64 id = 1;
+  MarketProvider market_provider = 2;
+}
+
+message MarketProvider {
   string url = 1;
   string base_asset = 2;
   string quote_asset = 3;
+}
+
+message Page {
+  int64 page_number = 1;
+  int64 page_size = 2;
 }
