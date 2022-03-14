@@ -132,8 +132,8 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		quotePrices = append(quotePrices, decimal.NewFromFloat32(v.GetPrice().GetQuotePrice()))
 	}
 
-	basePriceAvg, _ := decimal.Avg(basePrices[0], basePrices[1:]...).Round(2).BigFloat().Float32()
-	quotePriceAvg, _ := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(2).BigFloat().Float32()
+	basePriceAvg, _ := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8).BigFloat().Float32()
+	quotePriceAvg, _ := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8).BigFloat().Float32()
 
 	return &Price{
 		BasePrice:  basePriceAvg,
