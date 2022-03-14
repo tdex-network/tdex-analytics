@@ -65,7 +65,7 @@ func (i *influxDbService) GetPricesForMarkets(
 			MarketID:   result.Record().ValueByKey(marketTag).(string),
 			BasePrice:  float32(result.Record().ValueByKey(basePrice).(float64)),
 			BaseAsset:  result.Record().ValueByKey(baseAsset).(string),
-			QuotePrice: float32(result.Record().ValueByKey(basePrice).(float64)),
+			QuotePrice: float32(result.Record().ValueByKey(quotePrice).(float64)),
 			QuoteAsset: result.Record().ValueByKey(quoteAsset).(string),
 			Time:       result.Record().Time(),
 		}
