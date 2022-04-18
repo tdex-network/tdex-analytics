@@ -5,7 +5,7 @@ import (
 	"errors"
 	"github.com/urfave/cli/v2"
 	"strings"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 )
 
 var marketsCmd = &cli.Command{

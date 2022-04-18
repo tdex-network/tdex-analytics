@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc"
 	"net/http"
 	"strings"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 	"tdex-analytics/internal/core/application"
 	grpchandler "tdex-analytics/internal/interface/grpc/handler"
 	"tdex-analytics/internal/interface/grpc/interceptor"

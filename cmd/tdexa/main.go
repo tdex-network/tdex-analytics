@@ -17,7 +17,7 @@ import (
 	"os"
 	"path"
 	"strconv"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 )
 
 var (

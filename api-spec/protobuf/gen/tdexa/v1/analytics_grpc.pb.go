@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             (unknown)
-// source: v1/analytics.proto
+// source: tdexa/v1/analytics.proto
 
 package tdexav1
 
@@ -177,5 +177,5 @@ var Analytics_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "v1/analytics.proto",
+	Metadata: "tdexa/v1/analytics.proto",
 }
