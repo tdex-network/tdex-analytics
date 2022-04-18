@@ -65,7 +65,7 @@ func (i *influxDbService) GetBalancesForMarkets(
 			MarketID:     result.Record().ValueByKey(marketTag).(string),
 			BaseBalance:  int(result.Record().ValueByKey(baseBalance).(int64)),
 			BaseAsset:    result.Record().ValueByKey(baseAsset).(string),
-			QuoteBalance: int(result.Record().ValueByKey(baseBalance).(int64)),
+			QuoteBalance: int(result.Record().ValueByKey(quoteBalance).(int64)),
 			QuoteAsset:   result.Record().ValueByKey(quoteAsset).(string),
 			Time:         result.Record().Time(),
 		}
