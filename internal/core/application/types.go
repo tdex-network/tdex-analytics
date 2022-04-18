@@ -52,6 +52,7 @@ func (m *MarketBalance) toDomain() (*domain.MarketBalance, error) {
 		BaseAsset:    m.BaseAsset,
 		QuoteBalance: m.QuoteBalance,
 		QuoteAsset:   m.QuoteAsset,
+		Time:         m.Time,
 	}, nil
 }
 
@@ -83,6 +84,7 @@ func (m *MarketPrice) toDomain() (*domain.MarketPrice, error) {
 		BaseAsset:  m.BaseAsset,
 		QuotePrice: m.QuotePrice,
 		QuoteAsset: m.QuoteAsset,
+		Time:       m.Time,
 	}, nil
 }
 
