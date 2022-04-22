@@ -59,7 +59,7 @@ func main() {
 		config.GetString(config.JobPeriodInMinutes),
 	)
 
-	explorerSvc := explorer.NewExplorerService(config.ExplorerUrl)
+	explorerSvc := explorer.NewExplorerService(config.GetString(config.ExplorerUrl))
 
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,

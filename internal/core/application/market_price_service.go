@@ -105,13 +105,19 @@ func (m *marketPriceService) GetPrices(
 	for k, v := range marketsPrices {
 		prices := make([]Price, 0)
 		for _, v1 := range v {
-			basePriceInRefCurrency, quotePriceInRefCurrency, err := m.getReferencePrices(
-				ctx,
-				referenceCurrency,
-				v1,
-			)
-			if err != nil {
-				return nil, err
+			var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
+			if referenceCurrency != "" {
+				b, q, err := m.getReferencePrices(
+					ctx,
+					referenceCurrency,
+					v1,
+				)
+				if err != nil {
+					return nil, err
+				}
+
+				basePriceInRefCurrency = b
+				quotePriceInRefCurrency = q
 			}
 			prices = append(prices, Price{
 				BasePrice:          v1.BasePrice,
