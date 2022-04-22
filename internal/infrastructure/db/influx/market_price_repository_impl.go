@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/shopspring/decimal"
 	"tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -63,9 +64,9 @@ func (i *influxDbService) GetPricesForMarkets(
 		marketID := result.Record().ValueByKey(marketTag).(string)
 		marketPrice := domain.MarketPrice{
 			MarketID:   result.Record().ValueByKey(marketTag).(string),
-			BasePrice:  float32(result.Record().ValueByKey(basePrice).(float64)),
+			BasePrice:  decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64)),
 			BaseAsset:  result.Record().ValueByKey(baseAsset).(string),
-			QuotePrice: float32(result.Record().ValueByKey(quotePrice).(float64)),
+			QuotePrice: decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64)),
 			QuoteAsset: result.Record().ValueByKey(quoteAsset).(string),
 			Time:       result.Record().Time(),
 		}

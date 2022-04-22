@@ -132,8 +132,8 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		quotePrices = append(quotePrices, decimal.NewFromFloat(v.GetPrice().GetQuotePrice()))
 	}
 
-	basePriceAvg, _ := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8).BigFloat().Float32()
-	quotePriceAvg, _ := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8).BigFloat().Float32()
+	basePriceAvg := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
+	quotePriceAvg := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
 
 	return &Price{
 		BasePrice:  basePriceAvg,
@@ -303,6 +303,6 @@ type Balance struct {
 }
 
 type Price struct {
-	BasePrice  float32
-	QuotePrice float32
+	BasePrice  decimal.Decimal
+	QuotePrice decimal.Decimal
 }

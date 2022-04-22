@@ -92,6 +92,8 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		marketRepository,
 		tdexMarketLoaderSvc,
 		"5",
+		nil, //TODO
+		nil, //TODO
 	)
 	marketSvc = application.NewMarketService(marketRepository)
 }

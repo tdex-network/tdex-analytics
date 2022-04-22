@@ -47,6 +47,8 @@ const (
 	SSLCertPathKey = "SSL_CERT"
 	// SSLKeyPathKey is the path to the SSL private key
 	SSLKeyPathKey = "SSL_KEY"
+	// ExplorerUrl is explorer url used by tdexa
+	ExplorerUrl = "EXPLORER_URL"
 )
 
 var vip *viper.Viper
@@ -74,6 +76,7 @@ func init() {
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 	vip.SetDefault(PriceAmount, 100)
 	vip.SetDefault(JobPeriodInMinutes, "5")
+	vip.SetDefault(ExplorerUrl, "https://blockstream.info/liquid/api/")
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")

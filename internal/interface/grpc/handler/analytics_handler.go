@@ -67,6 +67,7 @@ func (a *analyticsHandler) MarketsPrices(
 		ctx,
 		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
 		parsePage(req.GetPage()),
+		req.GetReferenceCurrency(),
 		req.GetMarketIds()...,
 	)
 	if err != nil {
@@ -78,9 +79,11 @@ func (a *analyticsHandler) MarketsPrices(
 	for k, v := range mb.MarketsPrices {
 		marketPrices := make([]*tdexav1.MarketPrice, 0)
 		for _, v1 := range v {
+			basePrice, _ := v1.BasePrice.BigFloat().Float32()
+			quotePrice, _ := v1.QuotePrice.BigFloat().Float32()
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
-				BasePrice:  v1.BasePrice,
-				QuotePrice: v1.QuotePrice,
+				BasePrice:  basePrice,
+				QuotePrice: quotePrice,
 				Time:       v1.Time.String(),
 			})
 		}

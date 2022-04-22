@@ -4,9 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/robfig/cron/v3"
+	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
+	"tdex-analytics/internal/core/port"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
 )
@@ -23,6 +25,7 @@ type MarketPriceService interface {
 		ctx context.Context,
 		timeRange TimeRange,
 		page Page,
+		referenceCurrency string,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
 	// StartFetchingPricesJob starts cron job that will periodically fetch and store prices for all markets
@@ -35,6 +38,8 @@ type marketPriceService struct {
 	tdexMarketLoaderSvc      tdexmarketloader.Service
 	cronSvc                  *cron.Cron
 	fetchPriceCronExpression string
+	raterSvc                 port.RateService
+	explorerSvc              port.ExplorerService
 }
 
 func NewMarketPriceService(
@@ -42,6 +47,8 @@ func NewMarketPriceService(
 	marketRepository domain.MarketRepository,
 	tdexMarketLoaderSvc tdexmarketloader.Service,
 	jobPeriodInMinutes string,
+	raterSvc port.RateService,
+	explorerSvc port.ExplorerService,
 ) MarketPriceService {
 	return &marketPriceService{
 		marketPriceRepository:    marketPriceRepository,
@@ -49,6 +56,8 @@ func NewMarketPriceService(
 		marketRepository:         marketRepository,
 		tdexMarketLoaderSvc:      tdexMarketLoaderSvc,
 		fetchPriceCronExpression: fmt.Sprintf("@every %vm", jobPeriodInMinutes),
+		raterSvc:                 raterSvc,
+		explorerSvc:              explorerSvc,
 	}
 }
 
@@ -72,6 +81,7 @@ func (m *marketPriceService) GetPrices(
 	ctx context.Context,
 	timeRange TimeRange,
 	page Page,
+	referenceCurrency string,
 	marketIDs ...string,
 ) (*MarketsPrices, error) {
 	result := make(map[string][]Price)
@@ -95,12 +105,22 @@ func (m *marketPriceService) GetPrices(
 	for k, v := range marketsPrices {
 		prices := make([]Price, 0)
 		for _, v1 := range v {
+			basePriceInRefCurrency, quotePriceInRefCurrency, err := m.getReferencePrices(
+				ctx,
+				referenceCurrency,
+				v1,
+			)
+			if err != nil {
+				return nil, err
+			}
 			prices = append(prices, Price{
-				BasePrice:  v1.BasePrice,
-				BaseAsset:  v1.BaseAsset,
-				QuotePrice: v1.QuotePrice,
-				QuoteAsset: v1.QuoteAsset,
-				Time:       v1.Time,
+				BasePrice:          v1.BasePrice,
+				BaseAsset:          v1.BaseAsset,
+				BaseReferentPrice:  basePriceInRefCurrency,
+				QuotePrice:         v1.QuotePrice,
+				QuoteAsset:         v1.QuoteAsset,
+				QuoteReferentPrice: quotePriceInRefCurrency,
+				Time:               v1.Time,
 			})
 		}
 
@@ -110,6 +130,62 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func (m *marketPriceService) getReferencePrices(
+	ctx context.Context,
+	referenceCurrency string,
+	price domain.MarketPrice,
+) (decimal.Decimal, decimal.Decimal, error) {
+	var basePriceInRefCurrency, quoteCurrencyInRefCurrency decimal.Decimal
+	baseCurrency, err := m.explorerSvc.GetAssetCurrency(ctx, price.BaseAsset)
+	if err != nil {
+		return decimal.Zero, decimal.Zero, err
+	}
+
+	baseConvertable := true
+	oneUnitOfBasePerRef, err := m.raterSvc.ConvertCurrency(
+		ctx,
+		baseCurrency,
+		referenceCurrency,
+	)
+	if err != nil {
+		if err == port.ErrCurrencyNotFound {
+			baseConvertable = false
+		} else {
+			return decimal.Zero, decimal.Zero, err
+		}
+	}
+
+	if baseConvertable {
+		quoteCurrencyInRefCurrency = oneUnitOfBasePerRef
+		basePriceInRefCurrency = decimal.NewFromInt(1).Div(quoteCurrencyInRefCurrency)
+	} else {
+		quoteConvertable := true
+		quoteCurrency, err := m.explorerSvc.GetAssetCurrency(ctx, price.QuoteAsset)
+		if err != nil {
+			return decimal.Zero, decimal.Zero, err
+		}
+		oneUnitOfQuotePerRef, err := m.raterSvc.ConvertCurrency(
+			ctx,
+			quoteCurrency,
+			referenceCurrency,
+		)
+		if err != nil {
+			if err == port.ErrCurrencyNotFound {
+				quoteConvertable = false
+			} else {
+				return decimal.Zero, decimal.Zero, err
+			}
+		}
+
+		if quoteConvertable {
+			quoteCurrencyInRefCurrency = oneUnitOfQuotePerRef.Mul(price.QuotePrice)
+			basePriceInRefCurrency = decimal.NewFromInt(1).Div(quoteCurrencyInRefCurrency)
+		}
+	}
+
+	return basePriceInRefCurrency.Round(8), quoteCurrencyInRefCurrency.Round(8), nil
 }
 
 func (m *marketPriceService) StartFetchingPricesJob() error {
