@@ -2,7 +2,7 @@ package grpchandler
 
 import (
 	"context"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/v1"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 	"tdex-analytics/internal/core/application"
 )
 

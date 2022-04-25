@@ -1,7 +1,7 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "v1/analytics.proto",
+    "title": "tdexa/v1/analytics.proto",
     "version": "version not set"
   },
   "tags": [
@@ -343,7 +343,7 @@
         },
         "page": {
           "$ref": "#/definitions/v1Page",
-          "title": "pagination"
+          "title": "pagination. Leave empty to return all"
         }
       }
     },
