@@ -15,12 +15,15 @@ func (i *influxDbService) InsertPrice(
 ) error {
 	writeAPI := i.client.WriteAPI(i.org, i.analyticsBucket)
 
+	basePriceF, _ := price.BasePrice.BigFloat().Float64()
+	quotePriceF, _ := price.QuotePrice.BigFloat().Float64()
+
 	p := influxdb2.NewPointWithMeasurement(MarketPriceTable).
 		AddTag(marketTag, price.MarketID).
 		AddField(baseAsset, price.BaseAsset).
-		AddField(basePrice, price.BasePrice).
+		AddField(basePrice, basePriceF).
 		AddField(quoteAsset, price.QuoteAsset).
-		AddField(quotePrice, price.QuotePrice).
+		AddField(quotePrice, quotePriceF).
 		SetTime(price.Time)
 
 	writeAPI.WritePoint(p)
