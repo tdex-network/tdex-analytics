@@ -12,9 +12,13 @@ import (
 
 func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 	type args struct {
-		ctx               context.Context
-		referenceCurrency string
-		price             domain.MarketPrice
+		ctx                   context.Context
+		referenceCurrency     string
+		price                 domain.MarketPrice
+		refPricesPerAssetPair map[string]struct {
+			basePriceInRefCurrency  decimal.Decimal
+			quotePriceInRefCurrency decimal.Decimal
+		}
 	}
 	tests := []struct {
 		name                string
@@ -40,6 +44,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(2),
 					QuoteAsset: "quoteAsset",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:       "LBTC",
 			baseConversionRate: decimal.NewFromFloat(1),
@@ -59,6 +64,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(2),
 					QuoteAsset: "quoteAsset",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:        "LBTC",
 			baseConversionRate:  decimal.NewFromFloat(1),
@@ -80,6 +86,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(2),
 					QuoteAsset: "quoteAsset",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:        "LBTC",
 			baseRateErr:         port.ErrCurrencyNotFound,
@@ -108,6 +115,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(40381.20),
 					QuoteAsset: "USDT",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:       "LBTC",
 			baseConversionRate: decimal.NewFromFloat(37384.11),
@@ -127,6 +135,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(51151.07),
 					QuoteAsset: "LCAD",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:       "LBTC",
 			quoteCurrency:      "LCAD",
@@ -146,6 +155,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					QuotePrice: decimal.NewFromFloat(51151.07),
 					QuoteAsset: "LCAD",
 				},
+				refPricesPerAssetPair: refPricesPerAssetPair(),
 			},
 			baseCurrency:  "LBTC",
 			baseRateErr:   port.ErrCurrencyNotFound,
@@ -171,7 +181,7 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					tt.quoteRateErr,
 				),
 			}
-			got, got1, err := m.getReferencePrices(tt.args.ctx, tt.args.referenceCurrency, tt.args.price)
+			got, got1, err := m.getReferencePrices(tt.args.ctx, tt.args.referenceCurrency, tt.args.price.BaseAsset, tt.args.price.QuoteAsset, tt.args.refPricesPerAssetPair, tt.args.price.QuotePrice)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getReferencePrices() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -195,4 +205,14 @@ func mockRater(baseAssetID, quoteAssetID, baseCurrency, quoteCurrency, refCurren
 	raterMock.On("IsFiatSymbolSupported", mock.Anything).Return(true, nil)
 
 	return raterMock
+}
+
+func refPricesPerAssetPair() map[string]struct {
+	basePriceInRefCurrency  decimal.Decimal
+	quotePriceInRefCurrency decimal.Decimal
+} {
+	return make(map[string]struct {
+		basePriceInRefCurrency  decimal.Decimal
+		quotePriceInRefCurrency decimal.Decimal
+	})
 }

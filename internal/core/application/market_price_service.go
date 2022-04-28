@@ -108,44 +108,16 @@ func (m *marketPriceService) GetPrices(
 	for k, v := range marketsPrices {
 		prices := make([]Price, 0)
 		for _, v1 := range v {
-			var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
-			if referenceCurrency != "" {
-				assetPair := fmt.Sprintf("%s_%s", v1.BaseAsset, v1.QuoteAsset)
-				if v, ok := refPricesPerAssetPair[assetPair]; ok {
-					basePriceInRefCurrency = v.basePriceInRefCurrency
-					quotePriceInRefCurrency = v.quotePriceInRefCurrency
-				} else {
-					var baseConvertable, quoteConvertable bool
-					var oneUnitOfBasePerRef, oneUnitOfQuotePerRef decimal.Decimal
-					oneUnitOfBasePerRef, baseConvertable, oneUnitOfQuotePerRef, quoteConvertable, err =
-						m.calcOneUnitOfAssetConvertedToRefCurrency(
-							ctx,
-							referenceCurrency,
-							v1.BaseAsset,
-							v1.QuoteAsset,
-						)
-					if err != nil {
-						return nil, err
-					}
-
-					if baseConvertable {
-						quotePriceInRefCurrency = oneUnitOfBasePerRef
-						basePriceInRefCurrency = decimal.NewFromInt(1).Div(quotePriceInRefCurrency)
-					}
-
-					if quoteConvertable {
-						quotePriceInRefCurrency = oneUnitOfQuotePerRef.Mul(v1.QuotePrice)
-						basePriceInRefCurrency = decimal.NewFromInt(1).Div(quotePriceInRefCurrency)
-					}
-
-					refPricesPerAssetPair[assetPair] = struct {
-						basePriceInRefCurrency  decimal.Decimal
-						quotePriceInRefCurrency decimal.Decimal
-					}{
-						basePriceInRefCurrency:  basePriceInRefCurrency,
-						quotePriceInRefCurrency: quotePriceInRefCurrency,
-					}
-				}
+			basePriceInRefCurrency, quotePriceInRefCurrency, err := m.getReferencePrices(
+				ctx,
+				referenceCurrency,
+				v1.BaseAsset,
+				v1.QuoteAsset,
+				refPricesPerAssetPair,
+				v1.QuotePrice,
+			)
+			if err != nil {
+				return nil, err
 			}
 
 			prices = append(prices, Price{
@@ -165,6 +137,56 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func (m *marketPriceService) getReferencePrices(
+	ctx context.Context,
+	referenceCurrency string,
+	baseAsset string,
+	quoteAsset string,
+	refPricesPerAssetPair map[string]struct {
+		basePriceInRefCurrency  decimal.Decimal
+		quotePriceInRefCurrency decimal.Decimal
+	},
+	quotePrice decimal.Decimal,
+) (decimal.Decimal, decimal.Decimal, error) {
+	var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
+	assetPair := fmt.Sprintf("%s_%s", baseAsset, quoteAsset)
+	if v, ok := refPricesPerAssetPair[assetPair]; ok {
+		basePriceInRefCurrency = v.basePriceInRefCurrency
+		quotePriceInRefCurrency = v.quotePriceInRefCurrency
+	} else {
+		oneUnitOfBasePerRef, baseConvertable, oneUnitOfQuotePerRef, quoteConvertable, err :=
+			m.calcOneUnitOfAssetConvertedToRefCurrency(
+				ctx,
+				referenceCurrency,
+				baseAsset,
+				quoteAsset,
+			)
+		if err != nil {
+			return decimal.Zero, decimal.Zero, err
+		}
+
+		if baseConvertable {
+			quotePriceInRefCurrency = oneUnitOfBasePerRef
+			basePriceInRefCurrency = decimal.NewFromInt(1).Div(quotePriceInRefCurrency)
+		}
+
+		if quoteConvertable {
+			quotePriceInRefCurrency = oneUnitOfQuotePerRef.Mul(quotePrice)
+			basePriceInRefCurrency = decimal.NewFromInt(1).Div(quotePriceInRefCurrency)
+		}
+
+		refPricesPerAssetPair[assetPair] = struct {
+			basePriceInRefCurrency  decimal.Decimal
+			quotePriceInRefCurrency decimal.Decimal
+		}{
+			basePriceInRefCurrency:  basePriceInRefCurrency,
+			quotePriceInRefCurrency: quotePriceInRefCurrency,
+		}
+	}
+
+	return basePriceInRefCurrency.Round(8), quotePriceInRefCurrency.Round(8), nil
 }
 
 //calcOneUnitOfAssetConvertedToRefCurrency returns one unit of base or quote
