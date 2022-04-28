@@ -43,14 +43,13 @@ func (i *influxDbService) GetPricesForMarkets(
 	limit := page.Size
 	offset := page.Number*page.Size - page.Size
 	pagination := fmt.Sprintf("|> limit(n: %v, offset: %v)", limit, offset)
-	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs)
+	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketPriceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => r._measurement == \"%v\" %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
-		MarketPriceTable,
 		marketIDsFilter,
 		pagination,
 	)
