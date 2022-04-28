@@ -160,6 +160,8 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			m := &marketPriceService{
 				raterSvc: mockRater(
+					tt.args.price.BaseAsset,
+					tt.args.price.QuoteAsset,
 					tt.baseCurrency,
 					tt.quoteCurrency,
 					tt.args.referenceCurrency,
@@ -168,7 +170,6 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 					tt.baseRateErr,
 					tt.quoteRateErr,
 				),
-				explorerSvc: mockExplorer(tt.args.price.BaseAsset, tt.args.price.QuoteAsset, tt.baseCurrency, tt.quoteCurrency),
 			}
 			got, got1, err := m.getReferencePrices(tt.args.ctx, tt.args.referenceCurrency, tt.args.price)
 			if (err != nil) != tt.wantErr {
@@ -185,18 +186,13 @@ func TestMarketPriceServiceGetReferencePrices(t *testing.T) {
 	}
 }
 
-func mockRater(baseCurrency, quoteCurrency, refCurrency string, baseResult, quoteResult decimal.Decimal, baseErr, quoteErr error) port.RateService {
+func mockRater(baseAssetID, quoteAssetID, baseCurrency, quoteCurrency, refCurrency string, baseResult, quoteResult decimal.Decimal, baseErr, quoteErr error) port.RateService {
 	raterMock := new(port.MockRateService)
 	raterMock.On("ConvertCurrency", mock.Anything, baseCurrency, refCurrency).Return(baseResult, baseErr)
 	raterMock.On("ConvertCurrency", mock.Anything, quoteCurrency, refCurrency).Return(quoteResult, quoteErr)
+	raterMock.On("GetAssetCurrency", baseAssetID).Return(baseCurrency, nil)
+	raterMock.On("GetAssetCurrency", quoteAssetID).Return(quoteCurrency, nil)
+	raterMock.On("IsFiatSymbolSupported", mock.Anything).Return(true, nil)
 
 	return raterMock
-}
-
-func mockExplorer(baseAssetID, quoteAssetID, baseCurrency, quoteCurrency string) port.ExplorerService {
-	explorerMock := new(port.MockExplorerService)
-	explorerMock.On("GetAssetCurrency", mock.Anything, baseAssetID).Return(baseCurrency, nil)
-	explorerMock.On("GetAssetCurrency", mock.Anything, quoteAssetID).Return(quoteCurrency, nil)
-
-	return explorerMock
 }

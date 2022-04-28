@@ -12,7 +12,7 @@ import (
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
 	dbpg "tdex-analytics/internal/infrastructure/db/pg"
 	tdexagrpc "tdex-analytics/internal/interface/grpc"
-	"tdex-analytics/pkg/explorer"
+	"tdex-analytics/pkg/rater"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
@@ -59,15 +59,14 @@ func main() {
 		config.GetString(config.JobPeriodInMinutes),
 	)
 
-	explorerSvc := explorer.NewExplorerService(config.GetString(config.ExplorerUrl))
+	raterSvc := rater.NewExchangeRateClient(config.GetAssetCurrencyPair())
 
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
 		config.GetString(config.JobPeriodInMinutes),
-		nil, //TODO
-		explorerSvc,
+		raterSvc,
 	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()

@@ -80,11 +80,15 @@ func (a *analyticsHandler) MarketsPrices(
 		marketPrices := make([]*tdexav1.MarketPrice, 0)
 		for _, v1 := range v {
 			basePrice, _ := v1.BasePrice.BigFloat().Float32()
+			BaseReferencePrice, _ := v1.BaseReferentPrice.BigFloat().Float32()
 			quotePrice, _ := v1.QuotePrice.BigFloat().Float32()
+			quoteReferencePrice, _ := v1.QuoteReferentPrice.BigFloat().Float32()
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
-				BasePrice:  basePrice,
-				QuotePrice: quotePrice,
-				Time:       v1.Time.String(),
+				BasePrice:           basePrice,
+				BaseReferencePrice:  BaseReferencePrice,
+				QuotePrice:          quotePrice,
+				QuoteReferencePrice: quoteReferencePrice,
+				Time:                v1.Time.String(),
 			})
 		}
 		marketsPrices[k] = &tdexav1.MarketPrices{
