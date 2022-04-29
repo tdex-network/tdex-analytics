@@ -6,6 +6,7 @@ import (
 	"fmt"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
+	"github.com/shopspring/decimal"
 	"tdex-analytics/internal/core/domain"
 	"tdex-analytics/pkg/hexerr"
 	"time"
@@ -58,9 +59,9 @@ func (m *MarketBalance) toDomain() (*domain.MarketBalance, error) {
 
 type MarketPrice struct {
 	MarketID   string
-	BasePrice  float32
+	BasePrice  decimal.Decimal
 	BaseAsset  string
-	QuotePrice float32
+	QuotePrice decimal.Decimal
 	QuoteAsset string
 	Time       time.Time
 }
@@ -141,11 +142,13 @@ type MarketsPrices struct {
 }
 
 type Price struct {
-	BasePrice  float32
-	BaseAsset  string
-	QuotePrice float32
-	QuoteAsset string
-	Time       time.Time
+	BasePrice          decimal.Decimal
+	BaseAsset          string
+	BaseReferentPrice  decimal.Decimal
+	QuotePrice         decimal.Decimal
+	QuoteAsset         string
+	QuoteReferentPrice decimal.Decimal
+	Time               time.Time
 }
 
 type TimeRange struct {

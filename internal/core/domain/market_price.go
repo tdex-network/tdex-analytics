@@ -1,12 +1,15 @@
 package domain
 
-import "time"
+import (
+	"github.com/shopspring/decimal"
+	"time"
+)
 
 type MarketPrice struct {
 	MarketID   string
-	BasePrice  float32
+	BasePrice  decimal.Decimal
 	BaseAsset  string
-	QuotePrice float32
+	QuotePrice decimal.Decimal
 	QuoteAsset string
 	Time       time.Time
 }

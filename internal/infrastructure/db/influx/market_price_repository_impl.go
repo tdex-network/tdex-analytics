@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/shopspring/decimal"
 	"tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -14,12 +15,15 @@ func (i *influxDbService) InsertPrice(
 ) error {
 	writeAPI := i.client.WriteAPI(i.org, i.analyticsBucket)
 
+	basePriceF, _ := price.BasePrice.BigFloat().Float64()
+	quotePriceF, _ := price.QuotePrice.BigFloat().Float64()
+
 	p := influxdb2.NewPointWithMeasurement(MarketPriceTable).
 		AddTag(marketTag, price.MarketID).
 		AddField(baseAsset, price.BaseAsset).
-		AddField(basePrice, price.BasePrice).
+		AddField(basePrice, basePriceF).
 		AddField(quoteAsset, price.QuoteAsset).
-		AddField(quotePrice, price.QuotePrice).
+		AddField(quotePrice, quotePriceF).
 		SetTime(price.Time)
 
 	writeAPI.WritePoint(p)
@@ -39,14 +43,13 @@ func (i *influxDbService) GetPricesForMarkets(
 	limit := page.Size
 	offset := page.Number*page.Size - page.Size
 	pagination := fmt.Sprintf("|> limit(n: %v, offset: %v)", limit, offset)
-	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs)
+	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketPriceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => r._measurement == \"%v\" %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
-		MarketPriceTable,
 		marketIDsFilter,
 		pagination,
 	)
@@ -63,9 +66,9 @@ func (i *influxDbService) GetPricesForMarkets(
 		marketID := result.Record().ValueByKey(marketTag).(string)
 		marketPrice := domain.MarketPrice{
 			MarketID:   result.Record().ValueByKey(marketTag).(string),
-			BasePrice:  float32(result.Record().ValueByKey(basePrice).(float64)),
+			BasePrice:  decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64)),
 			BaseAsset:  result.Record().ValueByKey(baseAsset).(string),
-			QuotePrice: float32(result.Record().ValueByKey(quotePrice).(float64)),
+			QuotePrice: decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64)),
 			QuoteAsset: result.Record().ValueByKey(quoteAsset).(string),
 			Time:       result.Record().Time(),
 		}

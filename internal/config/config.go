@@ -4,6 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+	"strings"
 )
 
 const (
@@ -47,9 +48,23 @@ const (
 	SSLCertPathKey = "SSL_CERT"
 	// SSLKeyPathKey is the path to the SSL private key
 	SSLKeyPathKey = "SSL_KEY"
+	// ExplorerUrl is explorer url used by tdexa
+	ExplorerUrl = "EXPLORER_URL"
+	//AssetCurrencyPair is the asset currency pair used by tdexa,
+	//format: asset_hash:currency, asset_hash/currency pairs should be delimited by comma
+	//example: 0x0000000000000000000000000000000000000000:LBTC,0x0000000000000000000000000000000000000000:USDT
+	AssetCurrencyPair = "ASSET_CURRENCY_PAIRS"
 )
 
-var vip *viper.Viper
+var (
+	vip *viper.Viper
+
+	assetCurrencyPair = map[string]string{
+		"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d": "bitcoin",
+		"ce091c998b83c78bb71a632313ba3760f1763d9cfcffae02258ffa9865a37bd2": "usd",
+		"0e99c1a6da379d1f4151fb9df90449d40d0608f6cb33a5bcbfc8c265f42bab0a": "cad",
+	}
+)
 
 func init() {
 	vip = viper.New()
@@ -74,6 +89,7 @@ func init() {
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 	vip.SetDefault(PriceAmount, 100)
 	vip.SetDefault(JobPeriodInMinutes, "5")
+	vip.SetDefault(ExplorerUrl, "https://blockstream.info/liquid/api/")
 
 	if vip.GetString(InfluxDbAuthToken) == "" {
 		log.Fatalln("influx_db auth token not provided")
@@ -105,4 +121,19 @@ func validateTlsKeys() error {
 	}
 
 	return nil
+}
+
+func GetAssetCurrencyPair() map[string]string {
+	response := assetCurrencyPair
+	if vip.GetString(AssetCurrencyPair) != "" {
+		response = make(map[string]string)
+		for _, pair := range strings.Split(vip.GetString(AssetCurrencyPair), ",") {
+			parts := strings.Split(pair, ":")
+			if len(parts) != 2 {
+				log.Fatalf("invalid asset currency pair: %s", pair)
+			}
+			response[parts[0]] = parts[1]
+		}
+	}
+	return response
 }
