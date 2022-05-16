@@ -82,15 +82,14 @@ func (m *marketPriceService) GetPrices(
 	referenceCurrency string,
 	marketIDs ...string,
 ) (*MarketsPrices, error) {
-	if referenceCurrency == "" {
-		return nil, fmt.Errorf("missing reference currency")
-	}
-	supportedFiat, err := m.raterSvc.IsFiatSymbolSupported(referenceCurrency)
-	if err != nil {
-		return nil, err
-	}
-	if !supportedFiat {
-		return nil, fmt.Errorf("reference currency %s is not supported", referenceCurrency)
+	if referenceCurrency != "" {
+		supportedFiat, err := m.raterSvc.IsFiatSymbolSupported(referenceCurrency)
+		if err != nil {
+			return nil, err
+		}
+		if !supportedFiat {
+			return nil, fmt.Errorf("reference currency %s is not supported", referenceCurrency)
+		}
 	}
 
 	result := make(map[string][]Price)
@@ -188,35 +187,39 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 
 	switch {
 	case isBaseAssetStable:
-		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
-			ctx,
-			quoteAssetTicker,
-			referenceCurrency,
-		)
-		if basePriceInRefCurrency.IsZero() {
-			unitOfBasePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
-				ctx,
-				baseAssetTicker,
-				referenceCurrency,
-			)
-			basePriceInRefCurrency = unitOfBasePriceInRefCurrency.Mul(mktPrice.BasePrice)
-		}
-		quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
-	case isQuoteAssetStable:
-		quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+		unitOfBasePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
 			ctx,
 			baseAssetTicker,
 			referenceCurrency,
 		)
-		if quotePriceInRefCurrency.IsZero() {
-			unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+		if !unitOfBasePriceInRefCurrency.IsZero() {
+			basePriceInRefCurrency = unitOfBasePriceInRefCurrency.Mul(mktPrice.BasePrice)
+			quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+		} else {
+			basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 				ctx,
 				quoteAssetTicker,
 				referenceCurrency,
 			)
-			quotePriceInRefCurrency = unitOfQuotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+			quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
 		}
-		basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
+	case isQuoteAssetStable:
+		unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+			ctx,
+			quoteAssetTicker,
+			referenceCurrency,
+		)
+		if !unitOfQuotePriceInRefCurrency.IsZero() {
+			quotePriceInRefCurrency = unitOfQuotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+			basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
+		} else {
+			quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+				ctx,
+				baseAssetTicker,
+				referenceCurrency,
+			)
+			basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
+		}
 	case !isBaseAssetStable && !isQuoteAssetStable:
 		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 			ctx,

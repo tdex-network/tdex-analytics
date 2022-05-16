@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/shopspring/decimal"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
 	"tdex-analytics/internal/core/port"
 	"time"
+
+	"github.com/shopspring/decimal"
 
 	coingecko "github.com/superoo7/go-gecko/v3"
 )
@@ -174,8 +175,8 @@ func (e *exchangeRateWrapper) getFiatToFiatRate(
 	source string,
 	target string,
 ) (decimal.Decimal, error) {
-	source = strings.ToLower(source)
-	target = strings.ToLower(target)
+	source = strings.ToUpper(source)
+	target = strings.ToUpper(target)
 
 	params := map[string]string{
 		"base":    source,
