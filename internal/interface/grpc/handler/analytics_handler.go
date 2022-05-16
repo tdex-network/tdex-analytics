@@ -59,6 +59,7 @@ func (a *analyticsHandler) MarketsBalances(
 		MarketsBalances: marketsBalances,
 	}, nil
 }
+
 func (a *analyticsHandler) MarketsPrices(
 	ctx context.Context,
 	req *tdexav1.MarketsPricesRequest,
@@ -79,10 +80,10 @@ func (a *analyticsHandler) MarketsPrices(
 	for k, v := range mb.MarketsPrices {
 		marketPrices := make([]*tdexav1.MarketPrice, 0)
 		for _, v1 := range v {
-			basePrice, _ := v1.BasePrice.BigFloat().Float32()
-			BaseReferencePrice, _ := v1.BaseReferentPrice.BigFloat().Float32()
-			quotePrice, _ := v1.QuotePrice.BigFloat().Float32()
-			quoteReferencePrice, _ := v1.QuoteReferentPrice.BigFloat().Float32()
+			basePrice, _ := v1.BasePrice.Float64()
+			BaseReferencePrice, _ := v1.BaseReferentPrice.Float64()
+			quotePrice, _ := v1.QuotePrice.Float64()
+			quoteReferencePrice, _ := v1.QuoteReferentPrice.Float64()
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
 				BasePrice:           basePrice,
 				BaseReferencePrice:  BaseReferencePrice,
