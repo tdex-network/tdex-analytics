@@ -229,22 +229,22 @@
       "properties": {
         "basePrice": {
           "type": "number",
-          "format": "float",
+          "format": "double",
           "title": "base is the price of one unit of the base asset, priced in quote asset assuming the trade amount was, ie. 100 unit of that asset"
         },
         "quotePrice": {
           "type": "number",
-          "format": "float",
+          "format": "double",
           "title": "quote amount"
         },
         "baseReferencePrice": {
           "type": "number",
-          "format": "float",
+          "format": "double",
           "title": "base price converted to reference one"
         },
         "quoteReferencePrice": {
           "type": "number",
-          "format": "float",
+          "format": "double",
           "title": "quote price converted to reference one"
         },
         "time": {
