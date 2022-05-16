@@ -172,7 +172,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 			args: args{
 				ctx: ctx,
 				timeRange: application.TimeRange{
-					PredefinedPeriod: &lastMonthPp,
+					PredefinedPeriod: &lastThreeMonthsPp,
 					CustomPeriod:     nil,
 				},
 				referenceCurrency: "EUR",
