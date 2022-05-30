@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-//generates prices and balances data for 5 months, going from beginning of 2022
+//generates prices and balances data for 4 previous months,
 func main() {
 	filePrices, err := os.OpenFile("./script/prices.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -23,30 +23,33 @@ func main() {
 
 	pricesTemplate := "market_price,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_price=50,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_price=500 %v\n"
 	balancesTemplate := "market_balance,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_balance=50i,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_balances=500i %v\n"
-	t := time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	start := time.Now()
+	counter := time.Now()
+	approxFourMonthsInHours := time.Duration(time.Hour) * 24 * 30 * 4
 	for {
-		if t.Month() == 5 {
+		if start.Sub(counter) > approxFourMonthsInHours {
 			break
 		}
 
-		t = t.Add(time.Minute * 5)
+		counter = counter.Add(-time.Minute * 5)
 
-		_, err := pricesWriter.WriteString(fmt.Sprintf(pricesTemplate, 1, t.UnixNano()))
+		_, err := pricesWriter.WriteString(fmt.Sprintf(pricesTemplate, 1, counter.UnixNano()))
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = pricesWriter.WriteString(fmt.Sprintf(pricesTemplate, 2, t.UnixNano()))
+		_, err = pricesWriter.WriteString(fmt.Sprintf(pricesTemplate, 2, counter.UnixNano()))
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = balancesWriter.WriteString(fmt.Sprintf(balancesTemplate, 1, t.UnixNano()))
+		_, err = balancesWriter.WriteString(fmt.Sprintf(balancesTemplate, 1, counter.UnixNano()))
 		if err != nil {
 			panic(err)
 		}
 
-		_, err = balancesWriter.WriteString(fmt.Sprintf(balancesTemplate, 2, t.UnixNano()))
+		_, err = balancesWriter.WriteString(fmt.Sprintf(balancesTemplate, 2, counter.UnixNano()))
 		if err != nil {
 			panic(err)
 		}

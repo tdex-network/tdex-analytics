@@ -89,7 +89,7 @@ pgcreatetestdb:
 
 ## dev: create dev env
 dev:
-	 docker-compose --env-file .env.dev up -d
+	 docker-compose --env-file .env.dev up -d --build --force-recreate 
 
 ## dev-down: stop dev env, remove volumes
 dev-down:

@@ -2,14 +2,14 @@ package rater
 
 import (
 	"context"
-	"fmt"
-	"github.com/shopspring/decimal"
-	"github.com/stretchr/testify/assert"
-	coingecko "github.com/superoo7/go-gecko/v3"
 	"net/http"
 	"tdex-analytics/internal/core/port"
 	"testing"
 	"time"
+
+	"github.com/shopspring/decimal"
+	"github.com/stretchr/testify/assert"
+	coingecko "github.com/superoo7/go-gecko/v3"
 )
 
 func TestExchangeRateWrapperGetFiatToFiatRate(t *testing.T) {
@@ -19,7 +19,7 @@ func TestExchangeRateWrapperGetFiatToFiatRate(t *testing.T) {
 		},
 	}
 	_, err := e.getFiatToFiatRate(context.Background(), "ETH", "EUR")
-	assert.NoError(t, err)
+	assert.Error(t, err)
 
 	_, err = e.getFiatToFiatRate(context.Background(), "EUR", "USD")
 	assert.NoError(t, err)
@@ -43,7 +43,7 @@ func TestExchangeRateWrapperIsCryptoSymbol(t *testing.T) {
 
 	assert.Equal(t, false, isCryptoSymbol)
 
-	isCryptoSymbol, err = e.isCryptoSymbol("BTC")
+	isCryptoSymbol, err = e.isCryptoSymbol("bitcoin")
 	if err != nil {
 		t.Error(err)
 	}
@@ -63,8 +63,7 @@ func TestExchangeRateWrapperGetCryptoToFiatRate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-
-	fmt.Println(rate)
+	assert.Equal(t, true, rate.GreaterThan(decimal.Zero))
 }
 
 func TestExchangeRateWrapperConvertCurrency(t *testing.T) {
@@ -73,38 +72,38 @@ func TestExchangeRateWrapperConvertCurrency(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, true, result.GreaterThanOrEqual(decimal.NewFromInt(0)))
+	assert.Equal(t, true, result.GreaterThan(decimal.Zero))
 
-	result, err = client.ConvertCurrency(context.Background(), "eur", "USD")
+	result, err = client.ConvertCurrency(context.Background(), "USD", "EUR")
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, true, result.GreaterThanOrEqual(decimal.NewFromInt(0)))
-
-	result, err = client.ConvertCurrency(context.Background(), "bitcoin", "USD")
-	if err != nil {
-		t.Error(err)
-	}
-	assert.Equal(t, true, result.GreaterThanOrEqual(decimal.NewFromInt(0)))
+	assert.Equal(t, true, result.GreaterThan(decimal.Zero))
 
 	result, err = client.ConvertCurrency(context.Background(), "bitcoin", "USD")
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, true, result.GreaterThanOrEqual(decimal.NewFromInt(0)))
+	assert.Equal(t, true, result.GreaterThan(decimal.Zero))
+
+	result, err = client.ConvertCurrency(context.Background(), "bitcoin", "USD")
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, true, result.GreaterThan(decimal.Zero))
 
 	result, err = client.ConvertCurrency(context.Background(), "btc", "USD")
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Equal(t, true, result.GreaterThanOrEqual(decimal.NewFromInt(0)))
+	assert.Equal(t, true, result.GreaterThan(decimal.Zero))
 }
 
 func TestExchangeRateWrapperConvertCurrencyNegativeScenario(t *testing.T) {
 	client := NewExchangeRateClient(nil)
 	_, err := client.ConvertCurrency(context.Background(), "dwdw", "eur")
-	assert.Equal(t, err, port.ErrCurrencyNotFound)
+	assert.Equal(t, port.ErrCurrencyNotFound.Error(), err.Error())
 
 	_, err = client.ConvertCurrency(context.Background(), "btc", "dwdw")
-	assert.Equal(t, err, port.ErrCurrencyNotFound)
+	assert.Equal(t, port.ErrCurrencyNotFound.Error(), err.Error())
 }

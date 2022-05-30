@@ -2,9 +2,10 @@ package config
 
 import (
 	"fmt"
+	"strings"
+
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
-	"strings"
 )
 
 const (
@@ -87,7 +88,7 @@ func init() {
 	vip.SetDefault(TorProxyUrl, "127.0.0.1:9050")
 	vip.SetDefault(RegistryUrl, "https://raw.githubusercontent.com/tdex-network/tdex-registry/master/registry.json")
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
-	vip.SetDefault(PriceAmount, 100)
+	vip.SetDefault(PriceAmount, 1000)
 	vip.SetDefault(JobPeriodInMinutes, "5")
 	vip.SetDefault(ExplorerUrl, "https://blockstream.info/liquid/api/")
 
