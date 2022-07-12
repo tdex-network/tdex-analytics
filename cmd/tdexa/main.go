@@ -6,12 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"path"
-	"strconv"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
-
 	"github.com/btcsuite/btcutil"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -19,6 +13,11 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"io/ioutil"
+	"os"
+	"path"
+	"strconv"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 )
 
 var (

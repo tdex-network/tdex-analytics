@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
-	"github.com/tdex-network/tdex-protobuf/generated/go/trade"
-	"github.com/tdex-network/tdex-protobuf/generated/go/types"
 	"golang.org/x/net/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -17,6 +15,7 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	tdexv1 "tdex-analytics/api-spec/protobuf/gen/tdex/v1"
 )
 
 const (
@@ -84,9 +83,9 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	}
 	defer close()
 
-	client := trade.NewTradeClient(conn)
-	reply, err := client.Balances(ctx, &trade.BalancesRequest{
-		Market: &types.Market{
+	client := tdexv1.NewTradeServiceClient(conn)
+	reply, err := client.GetMarketBalance(ctx, &tdexv1.GetMarketBalanceRequest{
+		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
 		},
@@ -96,8 +95,8 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	}
 
 	return &Balance{
-		BaseBalance:  int(reply.GetBalances()[0].GetBalance().GetBaseAmount()), //TODO to be update with new spec
-		QuoteBalance: int(reply.GetBalances()[0].GetBalance().GetQuoteAmount()),
+		BaseBalance:  int(reply.GetBalance().GetBalance().GetBaseAmount()),
+		QuoteBalance: int(reply.GetBalance().GetBalance().GetQuoteAmount()),
 	}, nil
 }
 
@@ -111,13 +110,13 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	}
 	defer close()
 
-	client := trade.NewTradeClient(conn)
-	reply, err := client.MarketPrice(ctx, &trade.MarketPriceRequest{
-		Market: &types.Market{
+	client := tdexv1.NewTradeServiceClient(conn)
+	reply, err := client.PreviewTrade(ctx, &tdexv1.PreviewTradeRequest{
+		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
 		},
-		Type:   trade.TradeType_SELL,
+		Type:   tdexv1.TradeType_TRADE_TYPE_SELL,
 		Amount: uint64(t.priceAmount),
 		Asset:  market.BaseAsset,
 	})
@@ -127,7 +126,7 @@ func (t *tdexMarketLoaderService) FetchPrice(
 
 	basePrices := make([]decimal.Decimal, 0)
 	quotePrices := make([]decimal.Decimal, 0)
-	for _, v := range reply.GetPrices() {
+	for _, v := range reply.GetPreviews() {
 		basePrices = append(basePrices, decimal.NewFromFloat(v.GetPrice().GetBasePrice()))
 		quotePrices = append(quotePrices, decimal.NewFromFloat(v.GetPrice().GetQuotePrice()))
 	}
@@ -175,8 +174,8 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 	}
 	defer close()
 
-	client := trade.NewTradeClient(conn)
-	reply, err := client.Markets(ctx, &trade.MarketsRequest{})
+	client := tdexv1.NewTradeServiceClient(conn)
+	reply, err := client.ListMarkets(ctx, &tdexv1.ListMarketsRequest{})
 	if err != nil {
 		return nil, err
 	}

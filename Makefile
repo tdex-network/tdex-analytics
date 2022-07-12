@@ -16,7 +16,7 @@ build: build-server build-cli
 
 ## proto: compile proto files
 proto:
-	buf generate
+	cd api-spec/protobuf; buf mod update; cd ../../; buf generate buf.build/tdex-network/tdex-protobuf; buf generate
 
 ## pit: provision influxdb used for testing test
 pit:

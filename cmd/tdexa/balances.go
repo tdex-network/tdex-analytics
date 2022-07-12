@@ -2,9 +2,8 @@ package main
 
 import (
 	"context"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
-
 	"github.com/urfave/cli/v2"
+	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 )
 
 var listBalancesCmd = &cli.Command{

@@ -22,7 +22,6 @@ require (
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.0
 	github.com/superoo7/go-gecko v1.0.0
-	github.com/tdex-network/tdex-protobuf v0.0.0-20220310134014-ac3f6ebd7d36
 	github.com/urfave/cli/v2 v2.3.0
 	golang.org/x/net v0.0.0-20211013171255-e13a2654a71e
 	google.golang.org/genproto v0.0.0-20220118154757-00ab72f36ad5
