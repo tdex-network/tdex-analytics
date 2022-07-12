@@ -12,6 +12,7 @@ import (
 	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
 	dbpg "tdex-analytics/internal/infrastructure/db/pg"
 	tdexagrpc "tdex-analytics/internal/interface/grpc"
+	"tdex-analytics/pkg/rater"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
@@ -50,17 +51,22 @@ func main() {
 		marketRepository,
 		tdexMarketLoaderSvc,
 	)
+
 	marketBalanceSvc := application.NewMarketBalanceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
 		config.GetString(config.JobPeriodInMinutes),
 	)
+
+	raterSvc := rater.NewExchangeRateClient(config.GetAssetCurrencyPair())
+
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,
 		marketRepository,
 		tdexMarketLoaderSvc,
 		config.GetString(config.JobPeriodInMinutes),
+		raterSvc,
 	)
 
 	opts := tdexagrpc.WithInsecureGrpcGateway()

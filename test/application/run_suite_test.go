@@ -5,6 +5,6 @@ import (
 	"testing"
 )
 
-func TestInfluxDBTestSuite(t *testing.T) {
+func TestAppSvcTestSuite(t *testing.T) {
 	suite.Run(t, new(AppSvcTestSuit))
 }

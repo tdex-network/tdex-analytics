@@ -2,12 +2,6 @@ package tdexagrpc
 
 import (
 	"context"
-	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
-	"github.com/improbable-eng/grpc-web/go/grpcweb"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
-	"google.golang.org/grpc"
 	"net/http"
 	"strings"
 	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
@@ -15,6 +9,13 @@ import (
 	grpchandler "tdex-analytics/internal/interface/grpc/handler"
 	"tdex-analytics/internal/interface/grpc/interceptor"
 	"time"
+
+	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/improbable-eng/grpc-web/go/grpcweb"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"google.golang.org/grpc"
 )
 
 const (

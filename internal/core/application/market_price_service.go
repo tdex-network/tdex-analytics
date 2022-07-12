@@ -3,12 +3,15 @@ package application
 import (
 	"context"
 	"fmt"
-	"github.com/robfig/cron/v3"
-	log "github.com/sirupsen/logrus"
 	"strconv"
 	"tdex-analytics/internal/core/domain"
+	"tdex-analytics/internal/core/port"
 	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
+
+	"github.com/robfig/cron/v3"
+	"github.com/shopspring/decimal"
+	log "github.com/sirupsen/logrus"
 )
 
 type MarketPriceService interface {
@@ -23,6 +26,7 @@ type MarketPriceService interface {
 		ctx context.Context,
 		timeRange TimeRange,
 		page Page,
+		referenceCurrency string,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
 	// StartFetchingPricesJob starts cron job that will periodically fetch and store prices for all markets
@@ -35,6 +39,7 @@ type marketPriceService struct {
 	tdexMarketLoaderSvc      tdexmarketloader.Service
 	cronSvc                  *cron.Cron
 	fetchPriceCronExpression string
+	raterSvc                 port.RateService
 }
 
 func NewMarketPriceService(
@@ -42,6 +47,7 @@ func NewMarketPriceService(
 	marketRepository domain.MarketRepository,
 	tdexMarketLoaderSvc tdexmarketloader.Service,
 	jobPeriodInMinutes string,
+	raterSvc port.RateService,
 ) MarketPriceService {
 	return &marketPriceService{
 		marketPriceRepository:    marketPriceRepository,
@@ -49,6 +55,7 @@ func NewMarketPriceService(
 		marketRepository:         marketRepository,
 		tdexMarketLoaderSvc:      tdexMarketLoaderSvc,
 		fetchPriceCronExpression: fmt.Sprintf("@every %vm", jobPeriodInMinutes),
+		raterSvc:                 raterSvc,
 	}
 }
 
@@ -72,10 +79,20 @@ func (m *marketPriceService) GetPrices(
 	ctx context.Context,
 	timeRange TimeRange,
 	page Page,
+	referenceCurrency string,
 	marketIDs ...string,
 ) (*MarketsPrices, error) {
-	result := make(map[string][]Price)
+	if referenceCurrency != "" {
+		supportedFiat, err := m.raterSvc.IsFiatSymbolSupported(referenceCurrency)
+		if err != nil {
+			return nil, err
+		}
+		if !supportedFiat {
+			return nil, fmt.Errorf("reference currency %s is not supported", referenceCurrency)
+		}
+	}
 
+	result := make(map[string][]Price)
 	startTime, endTime, err := timeRange.getStartAndEndTime(time.Now())
 	if err != nil {
 		return nil, err
@@ -92,15 +109,36 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
+	//refPricesPerAssetPair holds prices for all assets pairs for reference currency
+	//purpose is to avoid multiple queries for same asset pair
+	refPricesPerAssetPair := make(map[string]referenceCurrencyPrice)
 	for k, v := range marketsPrices {
 		prices := make([]Price, 0)
 		for _, v1 := range v {
+			var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
+			if referenceCurrency != "" {
+				b, q, err := m.getPricesInReferenceCurrency(
+					ctx,
+					v1,
+					referenceCurrency,
+					refPricesPerAssetPair,
+				)
+				if err != nil {
+					return nil, err
+				}
+
+				basePriceInRefCurrency = b
+				quotePriceInRefCurrency = q
+			}
+
 			prices = append(prices, Price{
-				BasePrice:  v1.BasePrice,
-				BaseAsset:  v1.BaseAsset,
-				QuotePrice: v1.QuotePrice,
-				QuoteAsset: v1.QuoteAsset,
-				Time:       v1.Time,
+				BasePrice:          v1.BasePrice,
+				BaseAsset:          v1.BaseAsset,
+				BaseReferentPrice:  basePriceInRefCurrency,
+				QuotePrice:         v1.QuotePrice,
+				QuoteAsset:         v1.QuoteAsset,
+				QuoteReferentPrice: quotePriceInRefCurrency,
+				Time:               v1.Time,
 			})
 		}
 
@@ -110,6 +148,102 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func (m *marketPriceService) getPricesInReferenceCurrency(
+	ctx context.Context,
+	mktPrice domain.MarketPrice,
+	referenceCurrency string,
+	refPricesPerAssetPair map[string]referenceCurrencyPrice,
+) (
+	basePriceInRefCurrency decimal.Decimal,
+	quotePriceInRefCurrency decimal.Decimal,
+	err error,
+) {
+	assetPair := fmt.Sprintf("%s_%s", mktPrice.BaseAsset, mktPrice.QuoteAsset)
+	if v, ok := refPricesPerAssetPair[assetPair]; ok {
+		return v.basePrice, v.quotePrice, nil
+	}
+
+	baseAssetTicker, err := m.raterSvc.GetAssetCurrency(mktPrice.BaseAsset)
+	if err != nil {
+		return
+	}
+	quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(mktPrice.QuoteAsset)
+	if err != nil {
+		return
+	}
+	isBaseAssetStable, _ := m.raterSvc.IsFiatSymbolSupported(baseAssetTicker)
+	isQuoteAssetStable, _ := m.raterSvc.IsFiatSymbolSupported(quoteAssetTicker)
+
+	defer func() {
+		if !basePriceInRefCurrency.IsZero() && !quotePriceInRefCurrency.IsZero() {
+			refPricesPerAssetPair[assetPair] = referenceCurrencyPrice{
+				basePrice:  basePriceInRefCurrency,
+				quotePrice: quotePriceInRefCurrency,
+			}
+		}
+	}()
+
+	switch {
+	case isBaseAssetStable:
+		unitOfBasePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+			ctx,
+			baseAssetTicker,
+			referenceCurrency,
+		)
+		if !unitOfBasePriceInRefCurrency.IsZero() {
+			basePriceInRefCurrency = unitOfBasePriceInRefCurrency.Mul(mktPrice.BasePrice)
+			quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+		} else {
+			basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+				ctx,
+				quoteAssetTicker,
+				referenceCurrency,
+			)
+			quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+		}
+	case isQuoteAssetStable:
+		unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+			ctx,
+			quoteAssetTicker,
+			referenceCurrency,
+		)
+		if !unitOfQuotePriceInRefCurrency.IsZero() {
+			quotePriceInRefCurrency = unitOfQuotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+			basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
+		} else {
+			quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+				ctx,
+				baseAssetTicker,
+				referenceCurrency,
+			)
+			basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
+		}
+	case !isBaseAssetStable && !isQuoteAssetStable:
+		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+			ctx,
+			baseAssetTicker,
+			referenceCurrency,
+		)
+		quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+			ctx,
+			quoteAssetTicker,
+			referenceCurrency,
+		)
+
+		// TODO: uncomment this when we find a way to convert the prices of a
+		// market with no stable coins to ref currency in case we fail to retrieve
+		// one of the 2. For now, we return what we got from the rater service to
+		// keep it simple.
+		//
+		// if basePriceInRefCurrency.IsZero() == quotePriceInRefCurrency.IsZero() {
+		// 	return
+		// }
+	}
+	basePriceInRefCurrency = basePriceInRefCurrency.Round(2)
+	quotePriceInRefCurrency = quotePriceInRefCurrency.Round(2)
+	return
 }
 
 func (m *marketPriceService) StartFetchingPricesJob() error {
@@ -170,4 +304,9 @@ func (m *marketPriceService) FetchAndInsertPrice(
 		log.Errorf("FetchAndInsertPrice -> InsertPrice: %v", err)
 		return
 	}
+}
+
+type referenceCurrencyPrice struct {
+	basePrice  decimal.Decimal
+	quotePrice decimal.Decimal
 }

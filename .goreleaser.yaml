@@ -53,7 +53,7 @@ dockers:
   - image_templates:
     - "ghcr.io/tdex-network/tdexad:{{ .Tag }}-amd64"
     # push always either release or prerelease with a docker tag with the semver only
-    skip_push: false
+    skip_push: "false"
     use: buildx
     dockerfile: Dockerfile
     # GOOS of the built binaries/packages that should be used.
@@ -84,7 +84,7 @@ dockers:
   - image_templates:
     - "ghcr.io/tdex-network/tdexad:{{ .Tag }}-arm64v8"
     # push always either release or prerelease with a docker tag with the semver only
-    skip_push: false
+    skip_push: "false"
     use: buildx
     dockerfile: Dockerfile
     # GOOS of the built binaries/packages that should be used.
@@ -116,7 +116,7 @@ docker_manifests:
     image_templates:
       - ghcr.io/tdex-network/tdexad:{{ .Tag }}-amd64
       - ghcr.io/tdex-network/tdexad:{{ .Tag }}-arm64v8
-    skip_push: false
+    skip_push: "false"
 
   - name_template: ghcr.io/tdex-network/tdexad:latest
     image_templates:

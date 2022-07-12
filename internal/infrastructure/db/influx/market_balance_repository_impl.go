@@ -39,14 +39,13 @@ func (i *influxDbService) GetBalancesForMarkets(
 	limit := page.Size
 	offset := page.Number*page.Size - page.Size
 	pagination := fmt.Sprintf("|> limit(n: %v, offset: %v)", limit, offset)
-	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs)
+	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketBalanceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => r._measurement == \"%v\" %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
-		MarketBalanceTable,
 		marketIDsFilter,
 		pagination,
 	)
@@ -83,14 +82,18 @@ func (i *influxDbService) GetBalancesForMarkets(
 	return response, nil
 }
 
-func createMarkedIDsFluxQueryFilter(marketIDs []string) string {
-	query := ""
+func createMarkedIDsFluxQueryFilter(marketIDs []string, table string) string {
+	query := fmt.Sprintf("(r._measurement == \"%v\"", table)
 	for i, v := range marketIDs {
 		if i == 0 {
-			query = fmt.Sprintf("and r.market_id==\"%v\"", v)
+			query = fmt.Sprintf("%v and r.market_id==\"%v\")", query, v)
 		} else {
-			query = fmt.Sprintf("%v or r.market_id==\"%v\"", query, v)
+			query = fmt.Sprintf("%v or (r._measurement == \"%v\" and r.market_id==\"%v\")", query, table, v)
 		}
+	}
+
+	if len(marketIDs) == 0 {
+		query = fmt.Sprintf("%v)", query)
 	}
 
 	return query

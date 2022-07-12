@@ -2,6 +2,7 @@ package influxdbtest
 
 import (
 	"context"
+	"github.com/shopspring/decimal"
 	"tdex-analytics/internal/core/application"
 	"tdex-analytics/internal/core/domain"
 	"time"
@@ -13,9 +14,9 @@ func (idb *InfluxDBTestSuit) TestInsertMarketPrice() {
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertPrice(ctx, domain.MarketPrice{
 			MarketID:   "213",
-			BasePrice:  float32(50 + i),
+			BasePrice:  decimal.NewFromInt(int64(50 + i)),
 			BaseAsset:  "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-			QuotePrice: float32(500 + i),
+			QuotePrice: decimal.NewFromInt(int64(500 + i)),
 			QuoteAsset: "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
 			Time:       time.Now(),
 		}); err != nil {
@@ -30,9 +31,9 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertPrice(ctx, domain.MarketPrice{
 			MarketID:   "999",
-			BasePrice:  float32(50 + i),
+			BasePrice:  decimal.NewFromInt(int64(50 + i)),
 			BaseAsset:  "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-			QuotePrice: float32(500 + i),
+			QuotePrice: decimal.NewFromInt(int64(500 + i)),
 			QuoteAsset: "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
 			Time:       time.Now(),
 		}); err != nil {

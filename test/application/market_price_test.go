@@ -9,11 +9,11 @@ import (
 )
 
 func (a *AppSvcTestSuit) TestGetMarketPrice() {
-
 	type args struct {
-		ctx       context.Context
-		timeRange application.TimeRange
-		marketIDs []string
+		ctx               context.Context
+		timeRange         application.TimeRange
+		referenceCurrency string
+		marketIDs         []string
 	}
 	tests := []struct {
 		name             string
@@ -22,6 +22,19 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 		wantErr          bool
 	}{
 		{
+			name: "missing reference currency",
+			args: args{
+				ctx: ctx,
+				timeRange: application.TimeRange{
+					PredefinedPeriod: nil,
+					CustomPeriod:     nil,
+				},
+				referenceCurrency: "",
+				marketIDs:         nil,
+			},
+			wantErr: true,
+		},
+		{
 			name: "both PredefinedPeriod period and CustomPeriod cant be null",
 			args: args{
 				ctx: ctx,
@@ -29,7 +42,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					PredefinedPeriod: nil,
 					CustomPeriod:     nil,
 				},
-				marketIDs: nil,
+				referenceCurrency: "EUR",
+				marketIDs:         nil,
 			},
 			wantErr: true,
 		},
@@ -44,7 +58,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 						EndDate:   "",
 					},
 				},
-				marketIDs: nil,
+				referenceCurrency: "EUR",
+				marketIDs:         nil,
 			},
 			wantErr: true,
 		},
@@ -59,7 +74,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 						EndDate:   "",
 					},
 				},
-				marketIDs: nil,
+				referenceCurrency: "EUR",
+				marketIDs:         nil,
 			},
 			wantErr: true,
 		},
@@ -74,7 +90,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 						EndDate:   "Mon, 02 Jan 2006 15:04:05 -0700",
 					},
 				},
-				marketIDs: nil,
+				referenceCurrency: "EUR",
+				marketIDs:         nil,
 			},
 			wantErr: true,
 		},
@@ -86,7 +103,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					PredefinedPeriod: &lastHourPp,
 					CustomPeriod:     nil,
 				},
-				marketIDs: []string{"1"},
+				referenceCurrency: "EUR",
+				marketIDs:         []string{"1"},
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -105,7 +123,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					PredefinedPeriod: &lastDayPp,
 					CustomPeriod:     nil,
 				},
-				marketIDs: []string{"1"},
+				referenceCurrency: "EUR",
+				marketIDs:         []string{"1"},
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -130,7 +149,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					PredefinedPeriod: &lastMonthPp,
 					CustomPeriod:     nil,
 				},
-				marketIDs: []string{"1"},
+				referenceCurrency: "EUR",
+				marketIDs:         []string{"1"},
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -152,10 +172,11 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 			args: args{
 				ctx: ctx,
 				timeRange: application.TimeRange{
-					PredefinedPeriod: &lastMonthPp,
+					PredefinedPeriod: &lastThreeMonthsPp,
 					CustomPeriod:     nil,
 				},
-				marketIDs: []string{"1"},
+				referenceCurrency: "EUR",
+				marketIDs:         []string{"1"},
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -176,6 +197,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					Number: 1,
 					Size:   10000000,
 				},
+				tt.args.referenceCurrency,
 				tt.args.marketIDs...)
 			if (err != nil) != tt.wantErr {
 				a.T().Errorf("GetPrices() error = %v, wantErr %v", err, tt.wantErr)
