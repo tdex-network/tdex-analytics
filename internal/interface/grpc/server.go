@@ -16,6 +16,7 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+	grpchealth "google.golang.org/grpc/health/grpc_health_v1"
 )
 
 const (
@@ -152,6 +153,8 @@ func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 		s.marketSvc,
 	)
 
+	healthHandler := grpchandler.NewHealthHandler()
+
 	chainInterceptorSvc, err := interceptor.NewService()
 	if err != nil {
 		return nil, err
@@ -167,6 +170,7 @@ func (s *server) tdexaGrpcServer() (*grpc.Server, error) {
 
 	tdexaGrpcServer := grpc.NewServer(opts...)
 	tdexav1.RegisterAnalyticsServer(tdexaGrpcServer, analyticsHandler)
+	grpchealth.RegisterHealthServer(tdexaGrpcServer, healthHandler)
 
 	return tdexaGrpcServer, nil
 }
@@ -177,7 +181,7 @@ func (s *server) tdexaGrpcGateway(ctx context.Context) (http.Handler, error) {
 		return nil, err
 	}
 
-	grpcGatewayMux := runtime.NewServeMux()
+	grpcGatewayMux := runtime.NewServeMux(runtime.WithHealthzEndpoint(grpchealth.NewHealthClient(conn)))
 	if err := tdexav1.RegisterAnalyticsHandler(ctx, grpcGatewayMux, conn); err != nil {
 		return nil, err
 	}

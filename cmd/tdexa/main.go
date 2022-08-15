@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	grpchealth "google.golang.org/grpc/health/grpc_health_v1"
 	"io/ioutil"
 	"os"
 	"path"
@@ -37,6 +38,7 @@ func main() {
 		listBalancesCmd,
 		listPricesCmd,
 		marketsCmd,
+		healthCheckCmd,
 	)
 
 	err := app.Run(os.Args)
@@ -220,6 +222,21 @@ func getAnalyticsClient() (tdexav1.AnalyticsClient, func(), error) {
 	cleanup := func() { _ = conn.Close() }
 
 	return tdexav1.NewAnalyticsClient(conn), cleanup, nil
+}
+
+func getHealthClient() (grpchealth.HealthClient, func(), error) {
+	creds, err := getCreds()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	conn, err := getClientConn(creds)
+	if err != nil {
+		return nil, nil, err
+	}
+	cleanup := func() { _ = conn.Close() }
+
+	return grpchealth.NewHealthClient(conn), cleanup, nil
 }
 
 func getCreds() ([]grpc.DialOption, error) {
