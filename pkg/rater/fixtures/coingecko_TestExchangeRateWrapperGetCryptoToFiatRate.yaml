@@ -1,0 +1,63 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=eur
+    method: GET
+  response:
+    body: '{"bitcoin":{"eur":21470}}'
+    headers:
+      Access-Control-Allow-Headers:
+      - Origin, X-Requested-With, Content-Type, Accept, Authorization
+      Access-Control-Allow-Methods:
+      - POST, PUT, DELETE, GET, OPTIONS
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - link, per-page, total
+      Access-Control-Request-Method:
+      - '*'
+      Alternate-Protocol:
+      - 443:npn-spdy/2
+      Cache-Control:
+      - public, max-age=300
+      Cf-Cache-Status:
+      - HIT
+      Cf-Ray:
+      - 73fb9493a8a5b01b-BEG
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Wed, 24 Aug 2022 10:59:45 GMT
+      Etag:
+      - W/"fcede2e344b48f42a2f530504f0a65b3"
+      Expect-Ct:
+      - max-age=604800, report-uri="https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct"
+      Expires:
+      - Wed, 24 Aug 2022 11:04:45 GMT
+      Referrer-Policy:
+      - strict-origin-when-cross-origin
+      Server:
+      - cloudflare
+      Vary:
+      - Accept-Encoding, Origin
+      X-Content-Type-Options:
+      - nosniff
+      X-Download-Options:
+      - noopen
+      X-Frame-Options:
+      - SAMEORIGIN
+      X-Permitted-Cross-Domain-Policies:
+      - none
+      X-Request-Id:
+      - 7172f41e-4202-423c-a392-91ca6df37cfa
+      X-Runtime:
+      - "0.005390"
+      X-Xss-Protection:
+      - 1; mode=block
+    status: 200 OK
+    code: 200
+    duration: ""
