@@ -59,7 +59,12 @@ func main() {
 		config.GetString(config.JobPeriodInMinutes),
 	)
 
-	raterSvc := rater.NewExchangeRateClient(config.GetAssetCurrencyPair())
+	raterSvc := rater.NewExchangeRateClient(
+		config.GetAssetCurrencyPair(),
+		nil,
+		nil,
+		nil,
+	)
 
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,

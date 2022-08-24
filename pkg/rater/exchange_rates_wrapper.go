@@ -4,17 +4,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"golang.org/x/time/rate"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"tdex-analytics/internal/core/port"
 	"time"
 
 	"github.com/shopspring/decimal"
-
-	coingecko "github.com/superoo7/go-gecko/v3"
 )
 
 const (
@@ -25,25 +26,101 @@ const (
 	coinGeckoBtcID     = "bitcoin"
 	btcSymbol          = "btc"
 	lbtcSymbol         = "lbtc"
+
+	// defaultCoinGeckoRefreshInterval is the default interval for refreshing the coin
+	//list and exchange rates fetched from Coin Gecko
+	defaultCoinGeckoRefreshInterval = time.Minute * 5
+	// defaultNumOfCallsPerMin is the default number of calls per minute for the rate limiter
+	defaultCoinGeckoNumOfCallsPerMin = 50
+	// defaultCoinGeckoWaitDuration is the default duration for waiting for the
+	//rate limiter to allow call to coin gecko
+	defaultCoinGeckoWaitDuration = time.Second * httpTimeout
 )
 
-type exchangeRateWrapper struct {
-	httpClient              *http.Client
-	coinGeckoClient         *coingecko.Client
-	assetCurrencySymbolPair map[string]string
+var (
+	ErrCoinGeckoWaitDuration = errors.New("coin gecko wait duration exceeded")
+)
+
+type baseCurrency string
+type quoteCurrency string
+type baseRatesInfo struct {
+	baseRate         decimal.Decimal
+	refreshTimestamp time.Time
+}
+type coinListInfo struct {
+	coinList         map[string]string
+	refreshTimestamp time.Time
 }
 
-func NewExchangeRateClient(assetCurrencySymbolPair map[string]string) port.RateService {
+type exchangeRateWrapper struct {
+	httpClient *http.Client
+
+	coinGeckoSvc CoinGeckoService
+	// coinGeckoRefreshInterval is the interval for refreshing the coin list and
+	//exchange rates fetched from Coin Gecko
+	coinGeckoRefreshInterval time.Duration
+	// coinGeckoWaitDuration is the duration for waiting for the rate limiter
+	//to allow call to coin gecko
+	coinGeckoWaitDuration time.Duration
+
+	assetCurrencySymbolPair map[string]string
+
+	// exchangeRatesMtx is the mutex for the exchange rates map
+	exchangeRatesMtx sync.RWMutex
+	// exchangeRates is a cache of exchange rates fetched from Coin Gecko,
+	//it is refreshed every coinGeckoRefreshInterval
+	exchangeRates map[quoteCurrency]map[baseCurrency]baseRatesInfo
+
+	// coinListMtx is a mutex for the coin list
+	coinListMtx sync.RWMutex
+	// coins is a cache of the coin list from coin gecko, it is refreshed every
+	//coinGeckoRefreshInterval
+	coins coinListInfo
+
+	// rateLimiter is the rate limiter(token bucket) for the coin gecko api
+	rateLimiter *rate.Limiter
+}
+
+func NewExchangeRateClient(
+	assetCurrencySymbolPair map[string]string,
+	coinGeckoNumOfCallsPerMin *int,
+	coinGeckoRefreshInterval *time.Duration,
+	coinGeckoWaitDuration *time.Duration,
+) port.RateService {
 	httpClient := &http.Client{
 		Timeout: time.Second * httpTimeout,
 	}
 
-	client := coingecko.NewClient(httpClient)
+	coinGeckoSvc := NewCoinGeckoService(httpClient)
+
+	numOfCallsPerMin := defaultCoinGeckoNumOfCallsPerMin
+	if coinGeckoNumOfCallsPerMin != nil {
+		numOfCallsPerMin = *coinGeckoNumOfCallsPerMin
+	}
+
+	refreshInterval := defaultCoinGeckoRefreshInterval
+	if coinGeckoRefreshInterval != nil {
+		refreshInterval = *coinGeckoRefreshInterval
+	}
+
+	waitDuration := defaultCoinGeckoWaitDuration
+	if coinGeckoWaitDuration != nil {
+		waitDuration = *coinGeckoWaitDuration
+	}
 
 	return &exchangeRateWrapper{
-		httpClient:              httpClient,
-		coinGeckoClient:         client,
-		assetCurrencySymbolPair: assetCurrencySymbolPair,
+		httpClient:               httpClient,
+		coinGeckoSvc:             coinGeckoSvc,
+		coinGeckoRefreshInterval: refreshInterval,
+		coinGeckoWaitDuration:    waitDuration,
+		assetCurrencySymbolPair:  assetCurrencySymbolPair,
+		exchangeRates:            make(map[quoteCurrency]map[baseCurrency]baseRatesInfo),
+		exchangeRatesMtx:         sync.RWMutex{},
+		coins: coinListInfo{
+			coinList: make(map[string]string),
+		},
+		coinListMtx: sync.RWMutex{},
+		rateLimiter: rate.NewLimiter(rate.Every(time.Minute), numOfCallsPerMin),
 	}
 }
 
@@ -63,7 +140,7 @@ func (e *exchangeRateWrapper) ConvertCurrency(
 		return decimal.NewFromFloat(1), nil
 	}
 
-	isCryptoSymbol, err := e.isCryptoSymbol(source)
+	isCryptoSymbol, err := e.isCryptoSymbol(ctx, e.coinGeckoWaitDuration, source)
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -129,23 +206,35 @@ type CryptoCoin struct {
 	Name   string `json:"name"`
 }
 
-func (e *exchangeRateWrapper) isCryptoSymbol(symbol string) (bool, error) {
+func (e *exchangeRateWrapper) isCryptoSymbol(
+	ctx context.Context,
+	waitDuration time.Duration,
+	symbol string,
+) (bool, error) {
 	symbol = strings.ToLower(symbol)
 
-	list, err := e.coinGeckoClient.CoinsList()
-	if err != nil {
-		return false, err
-	}
-
-	for _, coin := range *list {
-		if coin.ID == symbol {
-			return true, nil
+	if len(e.coins.coinList) == 0 {
+		if err := e.reloadCoinList(ctx, waitDuration); err != nil {
+			return false, err
 		}
 	}
 
-	return false, err
+	_, ok := e.coins.coinList[symbol]
+	if e.coins.refreshTimestamp.Add(e.coinGeckoRefreshInterval).Before(time.Now()) || !ok {
+		if err := e.reloadCoinList(ctx, waitDuration); err != nil {
+			return false, err
+		}
+
+		_, ok1 := e.coins.coinList[symbol]
+		return ok1, nil
+	}
+
+	return ok, nil
 }
 
+// getCryptoToFiatRate returns the rate of one source crypt coin to the target fiat
+//data are fetched from coin gecko and in order to prevent rate limit errors, the
+//rates are cached and reloaded every coinGeckoRefreshInterval
 func (e *exchangeRateWrapper) getCryptoToFiatRate(
 	ctx context.Context,
 	source string,
@@ -154,20 +243,21 @@ func (e *exchangeRateWrapper) getCryptoToFiatRate(
 	source = strings.ToLower(source)
 	target = strings.ToLower(target)
 
-	price, err := e.coinGeckoClient.SimplePrice(
-		[]string{source},
-		[]string{target},
-	)
-	if err != nil {
-		return decimal.Zero, err
+	quote := quoteCurrency(source)
+	base := baseCurrency(target)
+
+	v, ok := e.exchangeRates[quote][base]
+	// if the rate is not found or data are old, reload the exchange rates, else return from cache
+	if v.refreshTimestamp.Add(e.coinGeckoRefreshInterval).Before(time.Now()) || !ok {
+		if err := e.reloadQuoteBasePair(ctx, e.coinGeckoWaitDuration, quote, base); err != nil {
+			return decimal.Decimal{}, err
+		}
+
+		quotePerBase, _ := e.exchangeRates[quote][base]
+		return quotePerBase.baseRate, nil
 	}
 
-	fValue := float64((*price)[source][target])
-	if fValue == 0 {
-		return decimal.Zero, port.ErrCurrencyNotFound
-	}
-
-	return decimal.NewFromFloat(fValue), nil
+	return v.baseRate, nil
 }
 
 func (e *exchangeRateWrapper) getFiatToFiatRate(
@@ -248,4 +338,88 @@ func (e *exchangeRateWrapper) fetchRates(params map[string]string) (RateResponse
 	}
 
 	return result, nil
+}
+
+// reloadCoinList reloads the coin list from coin gecko
+func (e *exchangeRateWrapper) reloadCoinList(
+	ctx context.Context,
+	waitTimeout time.Duration,
+) error {
+	e.coinListMtx.Lock()
+	defer e.coinListMtx.Unlock()
+
+	//check if allowed number of requests is exceeded, if yes wait for the next period
+	//but wait for waitDuration interval at least
+	if !e.rateLimiter.Allow() {
+		ctx, cancel := context.WithTimeout(ctx, waitTimeout)
+		defer cancel()
+
+		if err := e.rateLimiter.Wait(ctx); err != nil {
+			return ErrCoinGeckoWaitDuration
+		}
+	}
+
+	list, err := e.coinGeckoSvc.CoinsList()
+	if err != nil {
+		return err
+	}
+
+	if list == nil {
+		return fmt.Errorf("coin list returned empty list")
+	}
+
+	e.coins.coinList = make(map[string]string)
+	for _, coin := range *list {
+		e.coins.coinList[coin.ID] = coin.Symbol
+	}
+
+	e.coins.refreshTimestamp = time.Now()
+
+	return nil
+}
+
+// reloadQuoteBasePair reloads the quote per base rate from coinGecko APIr.
+func (e *exchangeRateWrapper) reloadQuoteBasePair(
+	ctx context.Context,
+	waitDuration time.Duration,
+	quote quoteCurrency,
+	base baseCurrency,
+) error {
+	e.exchangeRatesMtx.Lock()
+	defer e.exchangeRatesMtx.Unlock()
+
+	//check if allowed number of requests is exceeded, if yes wait for the next period
+	//but wait for waitDuration interval at least
+	if !e.rateLimiter.Allow() {
+		ctx, cancel := context.WithTimeout(ctx, waitDuration)
+		defer cancel()
+
+		if err := e.rateLimiter.Wait(ctx); err != nil {
+			return ErrCoinGeckoWaitDuration
+		}
+	}
+
+	price, err := e.coinGeckoSvc.SimplePrice(
+		[]string{string(quote)},
+		[]string{string(base)},
+	)
+	if err != nil {
+		return err
+	}
+
+	fValue := float64((*price)[string(quote)][string(base)])
+	if fValue == 0 {
+		return port.ErrCurrencyNotFound
+	}
+
+	if _, ok := e.exchangeRates[quote]; !ok {
+		e.exchangeRates[quote] = make(map[baseCurrency]baseRatesInfo)
+	}
+
+	e.exchangeRates[quote][base] = baseRatesInfo{
+		baseRate:         decimal.NewFromFloat(fValue),
+		refreshTimestamp: time.Now(),
+	}
+
+	return nil
 }
