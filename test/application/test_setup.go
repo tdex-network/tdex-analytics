@@ -97,7 +97,11 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		rater.NewExchangeRateClient(map[string]string{
 			"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225": "bitcoin",
 			"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d": "bitcoin",
-		}),
+		},
+			nil,
+			nil,
+			nil,
+		),
 	)
 	marketSvc = application.NewMarketService(marketRepository)
 }
