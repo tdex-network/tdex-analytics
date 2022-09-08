@@ -1,7 +1,7 @@
 package pgtest
 
 import (
-	dbpg "tdex-analytics/internal/infrastructure/db/pg"
+	dbpg "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg"
 
 	"github.com/stretchr/testify/suite"
 )

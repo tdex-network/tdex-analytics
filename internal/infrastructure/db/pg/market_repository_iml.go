@@ -5,8 +5,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/lib/pq"
-	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
 )
 
 const (

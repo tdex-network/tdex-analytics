@@ -2,7 +2,7 @@ package interceptor
 
 import (
 	"context"
-	"tdex-analytics/pkg/hexerr"
+	"github.com/tdex-network/tdex-analytics/pkg/hexerr"
 
 	log "github.com/sirupsen/logrus"
 

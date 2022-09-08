@@ -2,10 +2,10 @@ package influxdbtest
 
 import (
 	"context"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
 	"os"
-	"tdex-analytics/internal/core/application"
-	"tdex-analytics/internal/core/domain"
-	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
 	"time"
 )
 

@@ -2,12 +2,12 @@ package tdexagrpc
 
 import (
 	"context"
+	tdexav1 "github.com/tdex-network/tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
+	grpchandler "github.com/tdex-network/tdex-analytics/internal/interface/grpc/handler"
+	"github.com/tdex-network/tdex-analytics/internal/interface/grpc/interceptor"
 	"net/http"
 	"strings"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
-	"tdex-analytics/internal/core/application"
-	grpchandler "tdex-analytics/internal/interface/grpc/handler"
-	"tdex-analytics/internal/interface/grpc/interceptor"
 	"time"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"

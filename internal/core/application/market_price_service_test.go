@@ -2,8 +2,8 @@ package application
 
 import (
 	"context"
-	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/core/port"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/port"
 	"testing"
 
 	"github.com/shopspring/decimal"

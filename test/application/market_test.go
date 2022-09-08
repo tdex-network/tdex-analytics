@@ -2,7 +2,7 @@ package influxdbtest
 
 import (
 	"context"
-	"tdex-analytics/internal/core/application"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
 )
 
 func (a *AppSvcTestSuit) TestGetMarketsForFilter() {

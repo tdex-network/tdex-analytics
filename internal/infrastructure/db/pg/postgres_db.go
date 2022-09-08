@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"github.com/go-testfixtures/testfixtures/v3"
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
 	"sync"
-	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/infrastructure/db/pg/sqlc/queries"
 
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 
