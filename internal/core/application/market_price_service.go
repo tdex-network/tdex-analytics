@@ -3,10 +3,10 @@ package application
 import (
 	"context"
 	"fmt"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/port"
+	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
 	"strconv"
-	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/internal/core/port"
-	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 	"time"
 
 	"github.com/robfig/cron/v3"

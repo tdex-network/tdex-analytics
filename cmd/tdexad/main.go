@@ -2,18 +2,18 @@ package main
 
 import (
 	"context"
+	"github.com/tdex-network/tdex-analytics/internal/config"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
+	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
+	dbpg "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg"
+	tdexagrpc "github.com/tdex-network/tdex-analytics/internal/interface/grpc"
+	"github.com/tdex-network/tdex-analytics/pkg/rater"
+	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
 	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
-	"tdex-analytics/internal/config"
-	"tdex-analytics/internal/core/application"
-	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
-	dbpg "tdex-analytics/internal/infrastructure/db/pg"
-	tdexagrpc "tdex-analytics/internal/interface/grpc"
-	"tdex-analytics/pkg/rater"
-	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 )
 
 func main() {
@@ -91,7 +91,6 @@ func main() {
 		marketSvc,
 		opts,
 	)
-
 	if err != nil {
 		log.Fatal(err)
 	}

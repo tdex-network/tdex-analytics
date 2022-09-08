@@ -3,9 +3,9 @@ package rater
 import (
 	"context"
 	"fmt"
+	"github.com/tdex-network/tdex-analytics/internal/core/port"
 	"golang.org/x/time/rate"
 	"net/http"
-	"tdex-analytics/internal/core/port"
 	"testing"
 	"time"
 
