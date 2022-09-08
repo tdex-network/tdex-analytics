@@ -5,7 +5,7 @@ import (
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
 	"github.com/shopspring/decimal"
-	"tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"time"
 )
 

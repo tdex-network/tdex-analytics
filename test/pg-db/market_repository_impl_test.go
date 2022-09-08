@@ -2,7 +2,7 @@ package pgtest
 
 import (
 	"context"
-	"tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 )
 
 func (s *PgDbTestSuite) TestInsertAndFetchMarket() {

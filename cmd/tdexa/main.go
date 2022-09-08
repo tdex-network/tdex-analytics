@@ -9,6 +9,7 @@ import (
 	"github.com/btcsuite/btcutil"
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
+	tdexav1 "github.com/tdex-network/tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 	"github.com/urfave/cli/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -18,7 +19,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	tdexav1 "tdex-analytics/api-spec/protobuf/gen/tdexa/v1"
 )
 
 var (

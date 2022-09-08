@@ -2,7 +2,7 @@ package dbinflux
 
 import (
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
-	"tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 )
 
 const (

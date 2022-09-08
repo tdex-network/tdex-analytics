@@ -3,8 +3,8 @@ package influxdbtest
 import (
 	"context"
 	"github.com/shopspring/decimal"
-	"tdex-analytics/internal/core/application"
-	"tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"time"
 )
 

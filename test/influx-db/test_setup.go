@@ -2,8 +2,8 @@ package influxdbtest
 
 import (
 	"github.com/stretchr/testify/suite"
+	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
 	"os"
-	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
 )
 
 var (

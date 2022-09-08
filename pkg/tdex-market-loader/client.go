@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
+	tdexv1 "github.com/tdex-network/tdex-analytics/api-spec/protobuf/gen/tdex/v1"
 	"golang.org/x/net/proxy"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
@@ -15,7 +16,6 @@ import (
 	"net"
 	"net/http"
 	"strings"
-	tdexv1 "tdex-analytics/api-spec/protobuf/gen/tdex/v1"
 )
 
 const (

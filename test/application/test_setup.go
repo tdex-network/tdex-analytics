@@ -2,12 +2,12 @@ package influxdbtest
 
 import (
 	"context"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
+	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
+	dbpg "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg"
+	"github.com/tdex-network/tdex-analytics/pkg/rater"
+	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
 	"os"
-	"tdex-analytics/internal/core/application"
-	dbinflux "tdex-analytics/internal/infrastructure/db/influx"
-	dbpg "tdex-analytics/internal/infrastructure/db/pg"
-	"tdex-analytics/pkg/rater"
-	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
 
 	"github.com/stretchr/testify/suite"
 )
