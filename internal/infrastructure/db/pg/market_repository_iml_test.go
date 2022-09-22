@@ -1,7 +1,7 @@
 package dbpg
 
 import (
-	"tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"testing"
 )
 

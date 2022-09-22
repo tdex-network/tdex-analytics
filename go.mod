@@ -1,4 +1,4 @@
-module tdex-analytics
+module github.com/tdex-network/tdex-analytics
 
 go 1.16
 

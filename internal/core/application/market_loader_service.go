@@ -4,8 +4,8 @@ import (
 	"context"
 	"github.com/robfig/cron/v3"
 	log "github.com/sirupsen/logrus"
-	"tdex-analytics/internal/core/domain"
-	tdexmarketloader "tdex-analytics/pkg/tdex-market-loader"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
 	"time"
 )
 

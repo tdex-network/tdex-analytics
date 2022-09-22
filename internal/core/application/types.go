@@ -7,8 +7,8 @@ import (
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/shopspring/decimal"
-	"tdex-analytics/internal/core/domain"
-	"tdex-analytics/pkg/hexerr"
+	"github.com/tdex-network/tdex-analytics/internal/core/domain"
+	"github.com/tdex-network/tdex-analytics/pkg/hexerr"
 	"time"
 )
 

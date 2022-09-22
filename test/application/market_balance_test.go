@@ -3,8 +3,8 @@ package influxdbtest
 import (
 	"context"
 	"errors"
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"math"
-	"tdex-analytics/internal/core/application"
 	"time"
 )
 
