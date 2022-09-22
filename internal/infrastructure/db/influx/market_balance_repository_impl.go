@@ -16,9 +16,7 @@ func (i *influxDbService) InsertBalance(
 
 	p := influxdb2.NewPointWithMeasurement(MarketBalanceTable).
 		AddTag(marketTag, balance.MarketID).
-		AddField(baseAsset, balance.BaseAsset).
 		AddField(baseBalance, balance.BaseBalance).
-		AddField(quoteAsset, balance.QuoteAsset).
 		AddField(quoteBalance, balance.QuoteBalance).
 		SetTime(balance.Time)
 
@@ -34,6 +32,7 @@ func (i *influxDbService) GetBalancesForMarkets(
 	startTime time.Time,
 	endTime time.Time,
 	page domain.Page,
+	groupBy string,
 	marketIDs ...string,
 ) (map[string][]domain.MarketBalance, error) {
 	limit := page.Size
@@ -42,12 +41,20 @@ func (i *influxDbService) GetBalancesForMarkets(
 	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketBalanceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
+			"|> range(start: %s, stop: %s)"+
+			"|> filter(fn: (r) => %v)"+
+			"|> filter(fn: (r) => r[\"_field\"] == \"base_balance\" or r[\"_field\"] == \"quote_balance\")"+
+			"|> aggregateWindow(every: %s, fn: mean)"+
+			"|> sort() "+
+			"|> schema.fieldsAsCols()"+
+			"%v",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
 		marketIDsFilter,
 		pagination,
+		groupBy,
 	)
 	result, err := queryAPI.Query(
 		ctx,
@@ -63,9 +70,7 @@ func (i *influxDbService) GetBalancesForMarkets(
 		marketBalance := domain.MarketBalance{
 			MarketID:     result.Record().ValueByKey(marketTag).(string),
 			BaseBalance:  int(result.Record().ValueByKey(baseBalance).(int64)),
-			BaseAsset:    result.Record().ValueByKey(baseAsset).(string),
 			QuoteBalance: int(result.Record().ValueByKey(quoteBalance).(int64)),
-			QuoteAsset:   result.Record().ValueByKey(quoteAsset).(string),
 			Time:         result.Record().Time(),
 		}
 		val, ok := response[marketID]

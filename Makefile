@@ -18,7 +18,7 @@ build: build-server build-cli
 proto:
 	cd api-spec/protobuf; buf mod update; cd ../../; buf generate buf.build/tdex-network/tdex-protobuf; buf generate
 
-## pit: provision influxdb used for testing test
+## pit: provision influxdb used for testing
 pit:
 	INFLUXDB_BUCKET=analytics INFLUXDB_ORG=tdex-network INFLUXDB_PASSWORD=admin123 INFLUXDB_USERNAME=admin ./script/provision_influxdb_test.sh
 

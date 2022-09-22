@@ -38,6 +38,8 @@ message MarketsBalancesRequest {
   repeated string market_ids = 2;
   // pagination
   Page page = 3;
+  // used to group balances by time_frame for the specified time_range
+  TimeFrame time_frame = 4;
 }
 message MarketsBalancesReply {
   // returns map of market_id and its balances sorted by time ASC
@@ -64,6 +66,8 @@ message MarketsPricesRequest {
   string reference_currency = 3;
   // pagination. Leave empty to return all
   Page page = 4;
+  // used to group balances by time_frame for the specified time_range
+  TimeFrame time_frame = 5;
 }
 message MarketsPricesReply {
   // returns map of market_id and its prices sorted by time ASC
@@ -100,6 +104,15 @@ message CustomPeriod {
   string start_date = 1;
   // end_date in RFC3339 format
   string end_date = 2;
+}
+
+enum TimeFrame {
+  TF_NULL = 0;
+  TIME_FRAME_HOUR = 1;
+  TIME_FRAME_FOUR_HOURS = 2;
+  TIME_FRAME_DAY = 3;
+  TIME_FRAME_WEEK = 4;
+  TIME_FRAME_MONTH = 5;
 }
 
 enum PredefinedPeriod {

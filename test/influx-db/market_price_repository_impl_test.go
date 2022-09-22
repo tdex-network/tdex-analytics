@@ -72,6 +72,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"999"}...,
 	)
 	if err != nil {
@@ -113,6 +114,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"1"}...,
 	)
 	if err != nil {
@@ -120,4 +122,49 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 	}
 
 	idb.Equal(5, len(marketsPrices["1"]))
+}
+
+func (idb *InfluxDBTestSuit) TestGetMarketPriceDummy() {
+	startTime := time.Date(
+		application.StartYear,
+		5,
+		1,
+		5,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	endTime := time.Date(
+		application.StartYear,
+		9,
+		22,
+		6,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	page := domain.Page{
+		Number: 1,
+		Size:   25,
+	}
+
+	marketsPrices, err := dbSvc.GetPricesForMarkets(
+		context.Background(),
+		startTime,
+		endTime,
+		page,
+		"1mo",
+		[]string{"1"}...,
+	)
+	if err != nil {
+		idb.FailNow(err.Error())
+	}
+
+	//print base and quote prices and timestamps
+	for _, marketPrice := range marketsPrices["1"] {
+		idb.T().Log(marketPrice.BasePrice, marketPrice.QuotePrice, marketPrice.Time)
+	}
 }

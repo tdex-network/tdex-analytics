@@ -23,6 +23,16 @@ const (
 	All
 
 	StartYear = 2022
+
+	TzNil TimeFrame = iota
+	TimeFrameHour
+	TimeFrameFourHours
+	TimeFrameDay
+	TimeFrameWeek
+	TimeFrameMonth
+
+	FiveMinTimeFrame     = 5
+	FiveMinTimeFrameFlux = "5m"
 )
 
 type MarketBalance struct {
@@ -289,4 +299,51 @@ type Market struct {
 	Url        string
 	BaseAsset  string
 	QuoteAsset string
+}
+
+type TimeFrame int
+
+func (t *TimeFrame) validate() error {
+	if *t > TimeFrameMonth {
+		return hexerr.NewApplicationLayerError(
+			hexerr.InvalidRequest,
+			fmt.Sprintf("TimeFrame cant be > %v", All),
+		)
+	}
+
+	return nil
+}
+
+func (t *TimeFrame) toHours() int {
+	switch *t {
+	case TimeFrameHour:
+		return 1
+	case TimeFrameFourHours:
+		return 4
+	case TimeFrameDay:
+		return 24
+	case TimeFrameWeek:
+		return 24 * 7
+	case TimeFrameMonth:
+		return time.Now().Day() * 24
+	default:
+		return FiveMinTimeFrame
+	}
+}
+
+func (t *TimeFrame) toFluxDuration() string {
+	switch *t {
+	case TimeFrameHour:
+		return "1h"
+	case TimeFrameFourHours:
+		return "4h"
+	case TimeFrameDay:
+		return "1d"
+	case TimeFrameWeek:
+		return "7d"
+	case TimeFrameMonth:
+		return "1mo"
+	default:
+		return FiveMinTimeFrameFlux
+	}
 }

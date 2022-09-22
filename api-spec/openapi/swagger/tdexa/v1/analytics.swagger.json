@@ -308,6 +308,10 @@
         "page": {
           "$ref": "#/definitions/v1Page",
           "title": "pagination"
+        },
+        "timeFrame": {
+          "$ref": "#/definitions/v1TimeFrame",
+          "title": "used to group balances by time_frame for the specified time_range"
         }
       }
     },
@@ -344,6 +348,10 @@
         "page": {
           "$ref": "#/definitions/v1Page",
           "title": "pagination. Leave empty to return all"
+        },
+        "timeFrame": {
+          "$ref": "#/definitions/v1TimeFrame",
+          "title": "used to group balances by time_frame for the specified time_range"
         }
       }
     },
@@ -372,6 +380,18 @@
         "ALL"
       ],
       "default": "NULL"
+    },
+    "v1TimeFrame": {
+      "type": "string",
+      "enum": [
+        "TF_NULL",
+        "TIME_FRAME_HOUR",
+        "TIME_FRAME_FOUR_HOURS",
+        "TIME_FRAME_DAY",
+        "TIME_FRAME_WEEK",
+        "TIME_FRAME_MONTH"
+      ],
+      "default": "TF_NULL"
     },
     "v1TimeRange": {
       "type": "object",

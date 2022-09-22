@@ -1,4 +1,4 @@
-package influxdbtest
+package applicationtest
 
 import (
 	"context"
@@ -198,6 +198,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					Size:   10000000,
 				},
 				tt.args.referenceCurrency,
+				application.FiveMinTimeFrame,
 				tt.args.marketIDs...)
 			if (err != nil) != tt.wantErr {
 				a.T().Errorf("GetPrices() error = %v, wantErr %v", err, tt.wantErr)

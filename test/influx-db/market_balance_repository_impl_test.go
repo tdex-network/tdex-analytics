@@ -85,6 +85,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"90000"}...,
 	)
 	if err != nil {
@@ -126,6 +127,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"1"}...,
 	)
 	if err != nil {
