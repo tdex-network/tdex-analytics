@@ -23,7 +23,7 @@ func main() {
 
 	//line protocol https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_tutorial/
 	pricesTemplate := "market_price,market_id=%v base_price=50,quote_price=500 %v\n"
-	balancesTemplate := "market_balance,market_id=%v base_balance=50i,quote_balances=500i %v\n"
+	balancesTemplate := "market_balance,market_id=%v base_balance=50i,quote_balance=500i %v\n"
 
 	start := time.Now()
 	counter := time.Now()

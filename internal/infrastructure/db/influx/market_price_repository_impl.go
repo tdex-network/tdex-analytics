@@ -48,7 +48,6 @@ func (i *influxDbService) GetPricesForMarkets(
 		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
 			"|> range(start: %s, stop: %s)"+
 			"|> filter(fn: (r) => %v)"+
-			"|> filter(fn: (r) => r[\"_field\"] == \"base_price\" or r[\"_field\"] == \"quote_price\")"+
 			"|> aggregateWindow(every: %s, fn: mean)"+
 			"|> sort() "+
 			"|> schema.fieldsAsCols()"+
@@ -71,10 +70,19 @@ func (i *influxDbService) GetPricesForMarkets(
 	response := make(map[string][]domain.MarketPrice)
 	for result.Next() {
 		marketID := result.Record().ValueByKey(marketTag).(string)
+		bPrice := decimal.NewFromInt(0)
+		if result.Record().ValueByKey(basePrice) != nil {
+			bPrice = decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64))
+		}
+		qPrice := decimal.NewFromInt(0)
+		if result.Record().ValueByKey(quotePrice) != nil {
+			qPrice = decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64))
+		}
+
 		marketPrice := domain.MarketPrice{
-			MarketID:   result.Record().ValueByKey(marketTag).(string),
-			BasePrice:  decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64)),
-			QuotePrice: decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64)),
+			MarketID:   marketID,
+			BasePrice:  bPrice,
+			QuotePrice: qPrice,
 			Time:       result.Record().Time(),
 		}
 		val, ok := response[marketID]

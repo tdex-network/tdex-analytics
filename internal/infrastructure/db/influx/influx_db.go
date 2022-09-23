@@ -13,7 +13,7 @@ const (
 	baseBalance        = "base_balance"
 	basePrice          = "base_price"
 	quoteAsset         = "quote_asset"
-	quoteBalance       = "quote_balances"
+	quoteBalance       = "quote_balance"
 	quotePrice         = "quote_price"
 )
 

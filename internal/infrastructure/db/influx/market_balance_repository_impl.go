@@ -44,7 +44,6 @@ func (i *influxDbService) GetBalancesForMarkets(
 		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
 			"|> range(start: %s, stop: %s)"+
 			"|> filter(fn: (r) => %v)"+
-			"|> filter(fn: (r) => r[\"_field\"] == \"base_balance\" or r[\"_field\"] == \"quote_balance\")"+
 			"|> aggregateWindow(every: %s, fn: mean)"+
 			"|> sort() "+
 			"|> schema.fieldsAsCols()"+
@@ -53,8 +52,8 @@ func (i *influxDbService) GetBalancesForMarkets(
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
 		marketIDsFilter,
-		pagination,
 		groupBy,
+		pagination,
 	)
 	result, err := queryAPI.Query(
 		ctx,
@@ -67,10 +66,19 @@ func (i *influxDbService) GetBalancesForMarkets(
 	response := make(map[string][]domain.MarketBalance)
 	for result.Next() {
 		marketID := result.Record().ValueByKey(marketTag).(string)
+		bBalance := 0
+		if result.Record().ValueByKey(baseBalance) != nil {
+			bBalance = int(result.Record().ValueByKey(baseBalance).(int64))
+		}
+		qBalance := 0
+		if result.Record().ValueByKey(quoteBalance) != nil {
+			qBalance = int(result.Record().ValueByKey(quoteBalance).(int64))
+		}
+
 		marketBalance := domain.MarketBalance{
-			MarketID:     result.Record().ValueByKey(marketTag).(string),
-			BaseBalance:  int(result.Record().ValueByKey(baseBalance).(int64)),
-			QuoteBalance: int(result.Record().ValueByKey(quoteBalance).(int64)),
+			MarketID:     marketID,
+			BaseBalance:  bBalance,
+			QuoteBalance: qBalance,
 			Time:         result.Record().Time(),
 		}
 		val, ok := response[marketID]
