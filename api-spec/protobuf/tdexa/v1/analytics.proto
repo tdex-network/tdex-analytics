@@ -50,9 +50,9 @@ message MarketBalances {
 }
 message MarketBalance {
   // base balance
-  int64 base_balance = 1;
+  double base_balance = 1;
   // quote balance
-  int64 quote_balance = 2;
+  double quote_balance = 2;
   // point in time when market had this balance
   string time = 3;
 }

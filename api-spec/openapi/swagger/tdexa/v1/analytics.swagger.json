@@ -186,13 +186,13 @@
       "type": "object",
       "properties": {
         "baseBalance": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "double",
           "title": "base balance"
         },
         "quoteBalance": {
-          "type": "string",
-          "format": "int64",
+          "type": "number",
+          "format": "double",
           "title": "quote balance"
         },
         "time": {

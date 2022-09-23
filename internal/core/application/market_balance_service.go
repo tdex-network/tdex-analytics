@@ -93,7 +93,7 @@ func (m *marketBalanceService) GetBalances(
 		return nil, err
 	}
 
-	if int(endTime.Sub(startTime).Hours()) <= timeFrame.toHours() {
+	if int(endTime.Sub(startTime).Minutes()) <= timeFrame.toMinutes() {
 		return nil, ErrInvalidTimeFrame
 	}
 

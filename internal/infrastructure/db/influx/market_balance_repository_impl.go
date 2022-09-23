@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/shopspring/decimal"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -14,10 +15,13 @@ func (i *influxDbService) InsertBalance(
 ) error {
 	writeAPI := i.client.WriteAPI(i.org, i.analyticsBucket)
 
+	bBalance, _ := balance.BaseBalance.Float64()
+	qBalance, _ := balance.QuoteBalance.Float64()
+
 	p := influxdb2.NewPointWithMeasurement(MarketBalanceTable).
 		AddTag(marketTag, balance.MarketID).
-		AddField(baseBalance, balance.BaseBalance).
-		AddField(quoteBalance, balance.QuoteBalance).
+		AddField(baseBalance, bBalance).
+		AddField(quoteBalance, qBalance).
 		SetTime(balance.Time)
 
 	writeAPI.WritePoint(p)
@@ -45,9 +49,9 @@ func (i *influxDbService) GetBalancesForMarkets(
 			"|> range(start: %s, stop: %s)"+
 			"|> filter(fn: (r) => %v)"+
 			"|> aggregateWindow(every: %s, fn: mean)"+
-			"|> sort() "+
 			"|> schema.fieldsAsCols()"+
-			"%v",
+			"%v"+
+			"|> sort()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
@@ -66,13 +70,13 @@ func (i *influxDbService) GetBalancesForMarkets(
 	response := make(map[string][]domain.MarketBalance)
 	for result.Next() {
 		marketID := result.Record().ValueByKey(marketTag).(string)
-		bBalance := 0
+		bBalance := decimal.NewFromFloat(0)
 		if result.Record().ValueByKey(baseBalance) != nil {
-			bBalance = int(result.Record().ValueByKey(baseBalance).(int64))
+			bBalance = decimal.NewFromFloat(result.Record().ValueByKey(baseBalance).(float64))
 		}
-		qBalance := 0
+		qBalance := decimal.NewFromFloat(0)
 		if result.Record().ValueByKey(quoteBalance) != nil {
-			qBalance = int(result.Record().ValueByKey(quoteBalance).(int64))
+			qBalance = decimal.NewFromFloat(result.Record().ValueByKey(quoteBalance).(float64))
 		}
 
 		marketBalance := domain.MarketBalance{

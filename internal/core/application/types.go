@@ -30,16 +30,17 @@ const (
 	TimeFrameDay
 	TimeFrameWeek
 	TimeFrameMonth
+	Default5MinTimeFrame
 
-	FiveMinTimeFrame     = 5
 	FiveMinTimeFrameFlux = "5m"
+	HourMinutes          = 60
 )
 
 type MarketBalance struct {
 	MarketID     string
-	BaseBalance  int
+	BaseBalance  decimal.Decimal
 	BaseAsset    string
-	QuoteBalance int
+	QuoteBalance decimal.Decimal
 	QuoteAsset   string
 	Time         time.Time
 }
@@ -139,9 +140,9 @@ type MarketsBalances struct {
 }
 
 type Balance struct {
-	BaseBalance  int
+	BaseBalance  decimal.Decimal
 	BaseAsset    string
-	QuoteBalance int
+	QuoteBalance decimal.Decimal
 	QuoteAsset   string
 	Time         time.Time
 }
@@ -304,7 +305,7 @@ type Market struct {
 type TimeFrame int
 
 func (t *TimeFrame) validate() error {
-	if *t > TimeFrameMonth {
+	if *t > Default5MinTimeFrame {
 		return hexerr.NewApplicationLayerError(
 			hexerr.InvalidRequest,
 			fmt.Sprintf("TimeFrame cant be > %v", All),
@@ -314,20 +315,20 @@ func (t *TimeFrame) validate() error {
 	return nil
 }
 
-func (t *TimeFrame) toHours() int {
+func (t *TimeFrame) toMinutes() int {
 	switch *t {
 	case TimeFrameHour:
-		return 1
+		return 1 * HourMinutes
 	case TimeFrameFourHours:
-		return 4
+		return 4 * HourMinutes
 	case TimeFrameDay:
-		return 24
+		return 24 * HourMinutes
 	case TimeFrameWeek:
-		return 24 * 7
+		return 24 * 7 * HourMinutes
 	case TimeFrameMonth:
-		return time.Now().Day() * 24
+		return time.Now().Day() * 24 * HourMinutes
 	default:
-		return FiveMinTimeFrame
+		return 5
 	}
 }
 

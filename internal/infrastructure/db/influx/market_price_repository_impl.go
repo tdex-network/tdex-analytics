@@ -49,9 +49,9 @@ func (i *influxDbService) GetPricesForMarkets(
 			"|> range(start: %s, stop: %s)"+
 			"|> filter(fn: (r) => %v)"+
 			"|> aggregateWindow(every: %s, fn: mean)"+
-			"|> sort() "+
 			"|> schema.fieldsAsCols()"+
-			"%v",
+			"%v"+
+			"|> sort()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),

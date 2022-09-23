@@ -45,9 +45,11 @@ func (a *analyticsHandler) MarketsBalances(
 	for k, v := range mb.MarketsBalances {
 		marketBalances := make([]*tdexav1.MarketBalance, 0)
 		for _, v1 := range v {
+			baseBalance, _ := v1.BaseBalance.Float64()
+			quoteBalance, _ := v1.QuoteBalance.Float64()
 			marketBalances = append(marketBalances, &tdexav1.MarketBalance{
-				BaseBalance:  int64(v1.BaseBalance),
-				QuoteBalance: int64(v1.QuoteBalance),
+				BaseBalance:  baseBalance,
+				QuoteBalance: quoteBalance,
 				Time:         v1.Time.String(),
 			})
 		}
