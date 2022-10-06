@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	influxdb2 "github.com/influxdata/influxdb-client-go/v2"
+	"github.com/shopspring/decimal"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -14,12 +15,13 @@ func (i *influxDbService) InsertBalance(
 ) error {
 	writeAPI := i.client.WriteAPI(i.org, i.analyticsBucket)
 
+	bBalance, _ := balance.BaseBalance.Float64()
+	qBalance, _ := balance.QuoteBalance.Float64()
+
 	p := influxdb2.NewPointWithMeasurement(MarketBalanceTable).
 		AddTag(marketTag, balance.MarketID).
-		AddField(baseAsset, balance.BaseAsset).
-		AddField(baseBalance, balance.BaseBalance).
-		AddField(quoteAsset, balance.QuoteAsset).
-		AddField(quoteBalance, balance.QuoteBalance).
+		AddField(baseBalance, bBalance).
+		AddField(quoteBalance, qBalance).
 		SetTime(balance.Time)
 
 	writeAPI.WritePoint(p)
@@ -34,6 +36,7 @@ func (i *influxDbService) GetBalancesForMarkets(
 	startTime time.Time,
 	endTime time.Time,
 	page domain.Page,
+	groupBy string,
 	marketIDs ...string,
 ) (map[string][]domain.MarketBalance, error) {
 	limit := page.Size
@@ -42,11 +45,18 @@ func (i *influxDbService) GetBalancesForMarkets(
 	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketBalanceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
+			"|> range(start: %s, stop: %s)"+
+			"|> filter(fn: (r) => %v)"+
+			"|> aggregateWindow(every: %s, fn: mean)"+
+			"|> schema.fieldsAsCols()"+
+			"%v"+
+			"|> sort()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
 		marketIDsFilter,
+		groupBy,
 		pagination,
 	)
 	result, err := queryAPI.Query(
@@ -60,12 +70,19 @@ func (i *influxDbService) GetBalancesForMarkets(
 	response := make(map[string][]domain.MarketBalance)
 	for result.Next() {
 		marketID := result.Record().ValueByKey(marketTag).(string)
+		bBalance := decimal.NewFromFloat(0)
+		if result.Record().ValueByKey(baseBalance) != nil {
+			bBalance = decimal.NewFromFloat(result.Record().ValueByKey(baseBalance).(float64))
+		}
+		qBalance := decimal.NewFromFloat(0)
+		if result.Record().ValueByKey(quoteBalance) != nil {
+			qBalance = decimal.NewFromFloat(result.Record().ValueByKey(quoteBalance).(float64))
+		}
+
 		marketBalance := domain.MarketBalance{
-			MarketID:     result.Record().ValueByKey(marketTag).(string),
-			BaseBalance:  int(result.Record().ValueByKey(baseBalance).(int64)),
-			BaseAsset:    result.Record().ValueByKey(baseAsset).(string),
-			QuoteBalance: int(result.Record().ValueByKey(quoteBalance).(int64)),
-			QuoteAsset:   result.Record().ValueByKey(quoteAsset).(string),
+			MarketID:     marketID,
+			BaseBalance:  bBalance,
+			QuoteBalance: qBalance,
 			Time:         result.Record().Time(),
 		}
 		val, ok := response[marketID]

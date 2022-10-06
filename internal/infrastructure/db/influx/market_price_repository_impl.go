@@ -20,9 +20,7 @@ func (i *influxDbService) InsertPrice(
 
 	p := influxdb2.NewPointWithMeasurement(MarketPriceTable).
 		AddTag(marketTag, price.MarketID).
-		AddField(baseAsset, price.BaseAsset).
 		AddField(basePrice, basePriceF).
-		AddField(quoteAsset, price.QuoteAsset).
 		AddField(quotePrice, quotePriceF).
 		SetTime(price.Time)
 
@@ -38,6 +36,7 @@ func (i *influxDbService) GetPricesForMarkets(
 	startTime time.Time,
 	endTime time.Time,
 	page domain.Page,
+	groupBy string,
 	marketIDs ...string,
 ) (map[string][]domain.MarketPrice, error) {
 	limit := page.Size
@@ -46,11 +45,18 @@ func (i *influxDbService) GetPricesForMarkets(
 	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketPriceTable)
 	queryAPI := i.client.QueryAPI(i.org)
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")|> range(start: %s, stop: %s)|> filter(fn: (r) => %v) %v |> sort() |> schema.fieldsAsCols()",
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
+			"|> range(start: %s, stop: %s)"+
+			"|> filter(fn: (r) => %v)"+
+			"|> aggregateWindow(every: %s, fn: mean)"+
+			"|> schema.fieldsAsCols()"+
+			"%v"+
+			"|> sort()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
 		marketIDsFilter,
+		groupBy,
 		pagination,
 	)
 	result, err := queryAPI.Query(
@@ -64,12 +70,19 @@ func (i *influxDbService) GetPricesForMarkets(
 	response := make(map[string][]domain.MarketPrice)
 	for result.Next() {
 		marketID := result.Record().ValueByKey(marketTag).(string)
+		bPrice := decimal.NewFromInt(0)
+		if result.Record().ValueByKey(basePrice) != nil {
+			bPrice = decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64))
+		}
+		qPrice := decimal.NewFromInt(0)
+		if result.Record().ValueByKey(quotePrice) != nil {
+			qPrice = decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64))
+		}
+
 		marketPrice := domain.MarketPrice{
-			MarketID:   result.Record().ValueByKey(marketTag).(string),
-			BasePrice:  decimal.NewFromFloat(result.Record().ValueByKey(basePrice).(float64)),
-			BaseAsset:  result.Record().ValueByKey(baseAsset).(string),
-			QuotePrice: decimal.NewFromFloat(result.Record().ValueByKey(quotePrice).(float64)),
-			QuoteAsset: result.Record().ValueByKey(quoteAsset).(string),
+			MarketID:   marketID,
+			BasePrice:  bPrice,
+			QuotePrice: qPrice,
 			Time:       result.Record().Time(),
 		}
 		val, ok := response[marketID]
