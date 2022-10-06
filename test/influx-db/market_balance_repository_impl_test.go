@@ -2,6 +2,7 @@ package influxdbtest
 
 import (
 	"context"
+	"github.com/shopspring/decimal"
 	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
@@ -27,10 +28,8 @@ func (idb *InfluxDBTestSuit) TestInsertMarketBalance() {
 	for i := 0; i < 10; i++ {
 		if err := db.InsertBalance(ctx, domain.MarketBalance{
 			MarketID:     "2203",
-			BaseBalance:  50 + i,
-			BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-			QuoteBalance: 500 + i,
-			QuoteAsset:   "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+			BaseBalance:  decimal.NewFromInt(int64(50 + i)),
+			QuoteBalance: decimal.NewFromInt(int64(500 + i)),
 			Time:         time.Now(),
 		}); err != nil {
 			idb.FailNow(err.Error())
@@ -44,10 +43,8 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertBalance(ctx, domain.MarketBalance{
 			MarketID:     "90000",
-			BaseBalance:  50 + i,
-			BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-			QuoteBalance: 500 + i,
-			QuoteAsset:   "6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d",
+			BaseBalance:  decimal.NewFromInt(int64(50 + i)),
+			QuoteBalance: decimal.NewFromInt(int64(500 + i)),
 			Time:         time.Now(),
 		}); err != nil {
 			idb.FailNow(err.Error())
@@ -85,6 +82,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"90000"}...,
 	)
 	if err != nil {
@@ -126,6 +124,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"1"}...,
 	)
 	if err != nil {

@@ -95,8 +95,8 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	}
 
 	return &Balance{
-		BaseBalance:  int(reply.GetBalance().GetBalance().GetBaseAmount()),
-		QuoteBalance: int(reply.GetBalance().GetBalance().GetQuoteAmount()),
+		BaseBalance:  decimal.NewFromInt(int64(reply.GetBalance().GetBalance().GetBaseAmount())),
+		QuoteBalance: decimal.NewFromInt(int64(reply.GetBalance().GetBalance().GetQuoteAmount())),
 	}, nil
 }
 
@@ -297,8 +297,8 @@ func getGrpcConnectionWithTorClient(
 }
 
 type Balance struct {
-	BaseBalance  int
-	QuoteBalance int
+	BaseBalance  decimal.Decimal
+	QuoteBalance decimal.Decimal
 }
 
 type Price struct {

@@ -28,6 +28,7 @@ type MarketBalanceService interface {
 		ctx context.Context,
 		timeRange TimeRange,
 		page Page,
+		timeFrame TimeFrame,
 		marketIDs ...string,
 	) (*MarketsBalances, error)
 	// StartFetchingBalancesJob starts cron job that will periodically fetch and store balances for all markets
@@ -78,6 +79,7 @@ func (m *marketBalanceService) GetBalances(
 	ctx context.Context,
 	timeRange TimeRange,
 	page Page,
+	timeFrame TimeFrame,
 	marketIDs ...string,
 ) (*MarketsBalances, error) {
 	result := make(map[string][]Balance)
@@ -87,11 +89,30 @@ func (m *marketBalanceService) GetBalances(
 		return nil, err
 	}
 
+	if err := timeFrame.validate(); err != nil {
+		return nil, err
+	}
+
+	if int(endTime.Sub(startTime).Minutes()) <= timeFrame.toMinutes() {
+		return nil, ErrInvalidTimeFrame
+	}
+
+	markets, err := m.marketRepository.GetAllMarkets(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	marketsMap := make(map[int]domain.Market)
+	for _, v := range markets {
+		marketsMap[v.ID] = v
+	}
+
 	marketsBalances, err := m.marketBalanceRepository.GetBalancesForMarkets(
 		ctx,
 		startTime,
 		endTime,
 		page.ToDomain(),
+		timeFrame.toFluxDuration(),
 		marketIDs...,
 	)
 	if err != nil {
@@ -99,8 +120,18 @@ func (m *marketBalanceService) GetBalances(
 	}
 
 	for k, v := range marketsBalances {
+		marketIdStr, err := strconv.Atoi(k)
+		if err != nil {
+			return nil, err
+		}
+		baseAsset := marketsMap[marketIdStr].BaseAsset
+		quoteAsset := marketsMap[marketIdStr].QuoteAsset
+
 		balances := make([]Balance, 0)
 		for _, v1 := range v {
+			v1.BaseAsset = baseAsset
+			v1.QuoteAsset = quoteAsset
+
 			balances = append(balances, Balance{
 				BaseBalance:  v1.BaseBalance,
 				BaseAsset:    v1.BaseAsset,

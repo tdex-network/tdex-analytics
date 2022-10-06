@@ -33,6 +33,7 @@ func (a *analyticsHandler) MarketsBalances(
 		ctx,
 		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
 		parsePage(req.GetPage()),
+		parseTimeFrame(req.GetTimeFrame()),
 		req.GetMarketIds()...,
 	)
 	if err != nil {
@@ -44,9 +45,11 @@ func (a *analyticsHandler) MarketsBalances(
 	for k, v := range mb.MarketsBalances {
 		marketBalances := make([]*tdexav1.MarketBalance, 0)
 		for _, v1 := range v {
+			baseBalance, _ := v1.BaseBalance.Float64()
+			quoteBalance, _ := v1.QuoteBalance.Float64()
 			marketBalances = append(marketBalances, &tdexav1.MarketBalance{
-				BaseBalance:  int64(v1.BaseBalance),
-				QuoteBalance: int64(v1.QuoteBalance),
+				BaseBalance:  baseBalance,
+				QuoteBalance: quoteBalance,
 				Time:         v1.Time.String(),
 			})
 		}
@@ -69,6 +72,7 @@ func (a *analyticsHandler) MarketsPrices(
 		grpcTimeRangeToAppTimeRange(req.GetTimeRange()),
 		parsePage(req.GetPage()),
 		req.GetReferenceCurrency(),
+		parseTimeFrame(req.GetTimeFrame()),
 		req.GetMarketIds()...,
 	)
 	if err != nil {
@@ -167,5 +171,22 @@ func parsePage(p *tdexav1.Page) application.Page {
 	return application.Page{
 		Number: int(p.PageNumber),
 		Size:   int(p.PageSize),
+	}
+}
+
+func parseTimeFrame(timeFrame tdexav1.TimeFrame) application.TimeFrame {
+	switch timeFrame {
+	case tdexav1.TimeFrame_TIME_FRAME_HOUR:
+		return application.TimeFrameHour
+	case tdexav1.TimeFrame_TIME_FRAME_FOUR_HOURS:
+		return application.TimeFrameFourHours
+	case tdexav1.TimeFrame_TIME_FRAME_DAY:
+		return application.TimeFrameDay
+	case tdexav1.TimeFrame_TIME_FRAME_WEEK:
+		return application.TimeFrameWeek
+	case tdexav1.TimeFrame_TIME_FRAME_MONTH:
+		return application.TimeFrameMonth
+	default:
+		return application.TzNil
 	}
 }

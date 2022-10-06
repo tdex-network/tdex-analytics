@@ -1,4 +1,4 @@
-package influxdbtest
+package applicationtest
 
 import (
 	"context"

@@ -27,6 +27,7 @@ type MarketPriceService interface {
 		timeRange TimeRange,
 		page Page,
 		referenceCurrency string,
+		timeFrame TimeFrame,
 		marketIDs ...string,
 	) (*MarketsPrices, error)
 	// StartFetchingPricesJob starts cron job that will periodically fetch and store prices for all markets
@@ -80,6 +81,7 @@ func (m *marketPriceService) GetPrices(
 	timeRange TimeRange,
 	page Page,
 	referenceCurrency string,
+	timeFrame TimeFrame,
 	marketIDs ...string,
 ) (*MarketsPrices, error) {
 	if referenceCurrency != "" {
@@ -98,11 +100,30 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
+	if err := timeFrame.validate(); err != nil {
+		return nil, err
+	}
+
+	if int(endTime.Sub(startTime).Minutes()) <= timeFrame.toMinutes() {
+		return nil, ErrInvalidTimeFrame
+	}
+
+	markets, err := m.marketRepository.GetAllMarkets(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	marketsMap := make(map[int]domain.Market)
+	for _, v := range markets {
+		marketsMap[v.ID] = v
+	}
+
 	marketsPrices, err := m.marketPriceRepository.GetPricesForMarkets(
 		ctx,
 		startTime,
 		endTime,
 		page.ToDomain(),
+		timeFrame.toFluxDuration(),
 		marketIDs...,
 	)
 	if err != nil {
@@ -113,8 +134,18 @@ func (m *marketPriceService) GetPrices(
 	//purpose is to avoid multiple queries for same asset pair
 	refPricesPerAssetPair := make(map[string]referenceCurrencyPrice)
 	for k, v := range marketsPrices {
+		marketIdStr, err := strconv.Atoi(k)
+		if err != nil {
+			return nil, err
+		}
+		baseAsset := marketsMap[marketIdStr].BaseAsset
+		quoteAsset := marketsMap[marketIdStr].QuoteAsset
+
 		prices := make([]Price, 0)
 		for _, v1 := range v {
+			v1.BaseAsset = baseAsset
+			v1.QuoteAsset = quoteAsset
+
 			var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
 			if referenceCurrency != "" {
 				b, q, err := m.getPricesInReferenceCurrency(

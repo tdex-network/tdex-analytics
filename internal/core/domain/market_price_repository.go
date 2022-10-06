@@ -12,6 +12,7 @@ type MarketPriceRepository interface {
 		startTime time.Time,
 		endTime time.Time,
 		page Page,
+		groupBy string,
 		marketIDs ...string,
 	) (map[string][]MarketPrice, error)
 }

@@ -72,6 +72,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"999"}...,
 	)
 	if err != nil {
@@ -113,6 +114,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 		startTime,
 		endTime,
 		page,
+		"1mo",
 		[]string{"1"}...,
 	)
 	if err != nil {
