@@ -21,12 +21,14 @@ func main() {
 	}
 	balancesWriter := bufio.NewWriter(fileBalances)
 
-	pricesTemplate := "market_price,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_price=50,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_price=500 %v\n"
-	balancesTemplate := "market_balance,market_id=%v base_asset=\"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225\",base_balance=50i,quote_asset=\"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d\",quote_balances=500i %v\n"
+	//line protocol https://docs.influxdata.com/influxdb/v1.8/write_protocols/line_protocol_tutorial/
+	pricesTemplate := "market_price,market_id=%v base_price=51,quote_price=501 %v\n"
+	balancesTemplate := "market_balance,market_id=%v base_balance=52,quote_balance=502 %v\n"
 
 	start := time.Now()
 	counter := time.Now()
 	approxFourMonthsInHours := time.Duration(time.Hour) * 24 * 30 * 4
+	//generate prices for 4 previous months
 	for {
 		if start.Sub(counter) > approxFourMonthsInHours {
 			break

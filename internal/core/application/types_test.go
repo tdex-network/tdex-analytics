@@ -1,6 +1,7 @@
 package application
 
 import (
+	"github.com/shopspring/decimal"
 	"reflect"
 	"testing"
 	"time"
@@ -9,9 +10,9 @@ import (
 func TestMarketBalanceValidate(t *testing.T) {
 	type fields struct {
 		MarketID     string
-		BaseBalance  int
+		BaseBalance  decimal.Decimal
 		BaseAsset    string
-		QuoteBalance int
+		QuoteBalance decimal.Decimal
 		QuoteAsset   string
 	}
 	tests := []struct {
@@ -23,9 +24,9 @@ func TestMarketBalanceValidate(t *testing.T) {
 			name: "invalid market_id and assets",
 			fields: fields{
 				MarketID:     "0",
-				BaseBalance:  0,
+				BaseBalance:  decimal.NewFromInt(0),
 				BaseAsset:    "",
-				QuoteBalance: 0,
+				QuoteBalance: decimal.NewFromInt(0),
 				QuoteAsset:   "",
 			},
 			wantErr: true,
@@ -34,9 +35,9 @@ func TestMarketBalanceValidate(t *testing.T) {
 			name: "invalid market_id",
 			fields: fields{
 				MarketID:     "0",
-				BaseBalance:  0,
+				BaseBalance:  decimal.NewFromInt(0),
 				BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-				QuoteBalance: 0,
+				QuoteBalance: decimal.NewFromInt(0),
 				QuoteAsset:   "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 			},
 			wantErr: false,
@@ -45,9 +46,9 @@ func TestMarketBalanceValidate(t *testing.T) {
 			name: "happy path",
 			fields: fields{
 				MarketID:     "1",
-				BaseBalance:  0,
+				BaseBalance:  decimal.NewFromInt(0),
 				BaseAsset:    "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
-				QuoteBalance: 0,
+				QuoteBalance: decimal.NewFromInt(0),
 				QuoteAsset:   "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 			},
 			wantErr: false,
