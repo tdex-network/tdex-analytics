@@ -101,16 +101,20 @@ func (i *influxDbService) GetBalancesForMarkets(
 
 func createMarkedIDsFluxQueryFilter(marketIDs []string, table string) string {
 	query := fmt.Sprintf("(r._measurement == \"%v\"", table)
+	fieldsFilter := "and (r._field == \"base_price\" or r._field == \"quote_price\")"
+	if table == MarketBalanceTable {
+		fieldsFilter = "and (r._field == \"base_balance\" or r._field == \"quote_balance\")"
+	}
 	for i, v := range marketIDs {
 		if i == 0 {
-			query = fmt.Sprintf("%v and r.market_id==\"%v\")", query, v)
+			query = fmt.Sprintf("%v and r.market_id==\"%v\" %v)", query, v, fieldsFilter)
 		} else {
-			query = fmt.Sprintf("%v or (r._measurement == \"%v\" and r.market_id==\"%v\")", query, table, v)
+			query = fmt.Sprintf("%v or (r._measurement == \"%v\" and r.market_id==\"%v\" %v)", query, table, v, fieldsFilter)
 		}
 	}
 
 	if len(marketIDs) == 0 {
-		query = fmt.Sprintf("%v)", query)
+		query = fmt.Sprintf("%v %v)", query, fieldsFilter)
 	}
 
 	return query
