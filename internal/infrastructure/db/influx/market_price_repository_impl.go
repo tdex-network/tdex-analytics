@@ -44,13 +44,16 @@ func (i *influxDbService) GetPricesForMarkets(
 	pagination := fmt.Sprintf("|> limit(n: %v, offset: %v)", limit, offset)
 	marketIDsFilter := createMarkedIDsFluxQueryFilter(marketIDs, MarketPriceTable)
 	queryAPI := i.client.QueryAPI(i.org)
+	if groupBy != "" {
+		groupBy = fmt.Sprintf("|> aggregateWindow(every: %s, fn: mean)", groupBy)
+	}
 	query := fmt.Sprintf(
-		"import \"influxdata/influxdb/schema\" from(bucket:\"%v\")"+
+		"import \"influxdata/influxdb/schema\" from(bucket:\"%s\")"+
 			"|> range(start: %s, stop: %s)"+
-			"|> filter(fn: (r) => %v)"+
-			"|> aggregateWindow(every: %s, fn: mean)"+
-			"|> schema.fieldsAsCols()"+
+			"|> filter(fn: (r) => %s)"+
 			"%v"+
+			"|> schema.fieldsAsCols()"+
+			"%s"+
 			"|> sort()",
 		i.analyticsBucket,
 		startTime.Format(time.RFC3339),

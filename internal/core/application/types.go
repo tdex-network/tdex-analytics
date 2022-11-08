@@ -30,7 +30,6 @@ const (
 	TimeFrameDay
 	TimeFrameWeek
 	TimeFrameMonth
-	Default5MinTimeFrame
 
 	FiveMinTimeFrameFlux = "5m"
 	HourMinutes          = 60
@@ -305,10 +304,10 @@ type Market struct {
 type TimeFrame int
 
 func (t *TimeFrame) validate() error {
-	if *t > Default5MinTimeFrame {
+	if *t > TimeFrameMonth {
 		return hexerr.NewApplicationLayerError(
 			hexerr.InvalidRequest,
-			fmt.Sprintf("TimeFrame cant be > %v", All),
+			fmt.Sprintf("TimeFrame cant be > %v", TimeFrameMonth),
 		)
 	}
 
@@ -328,7 +327,7 @@ func (t *TimeFrame) toMinutes() int {
 	case TimeFrameMonth:
 		return time.Now().Day() * 24 * HourMinutes
 	default:
-		return 5
+		return 0
 	}
 }
 
@@ -345,6 +344,6 @@ func (t *TimeFrame) toFluxDuration() string {
 	case TimeFrameMonth:
 		return "1mo"
 	default:
-		return FiveMinTimeFrameFlux
+		return ""
 	}
 }

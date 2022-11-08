@@ -14,6 +14,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 		timeRange         application.TimeRange
 		referenceCurrency string
 		marketIDs         []string
+		timeFrame         application.TimeFrame
 	}
 	tests := []struct {
 		name             string
@@ -31,6 +32,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "",
 				marketIDs:         nil,
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -44,6 +46,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         nil,
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -60,6 +63,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         nil,
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -76,6 +80,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         nil,
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -92,6 +97,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         nil,
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -105,6 +111,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         []string{"1"},
+				timeFrame:         application.TzNil,
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -125,6 +132,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         []string{"1"},
+				timeFrame:         application.TzNil,
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -151,6 +159,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         []string{"1"},
+				timeFrame:         application.TimeFrameFourHours,
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -177,6 +186,30 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				},
 				referenceCurrency: "EUR",
 				marketIDs:         []string{"1"},
+				timeFrame:         application.TimeFrameFourHours,
+			},
+			validateResponse: func(prices *application.MarketsPrices) error {
+				if len(prices.MarketsPrices) != 1 {
+					return errors.New("expected prices for 1 markets")
+				}
+
+				return nil
+			},
+			wantErr: false,
+		},
+		{
+			name: "time frame nil for custom period",
+			args: args{
+				ctx: ctx,
+				timeRange: application.TimeRange{
+					CustomPeriod: &application.CustomPeriod{
+						StartDate: "2022-11-08T09:11:35.600Z",
+						EndDate:   "2022-11-08T09:16:35.600Z",
+					},
+				},
+				referenceCurrency: "EUR",
+				marketIDs:         []string{"1"},
+				timeFrame:         application.TzNil,
 			},
 			validateResponse: func(prices *application.MarketsPrices) error {
 				if len(prices.MarketsPrices) != 1 {
@@ -198,7 +231,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 					Size:   10000000,
 				},
 				tt.args.referenceCurrency,
-				application.Default5MinTimeFrame,
+				tt.args.timeFrame,
 				tt.args.marketIDs...)
 			if (err != nil) != tt.wantErr {
 				a.T().Errorf("GetPrices() error = %v, wantErr %v", err, tt.wantErr)

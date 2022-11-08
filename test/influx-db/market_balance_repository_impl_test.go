@@ -133,3 +133,58 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 
 	idb.Equal(5, len(marketsBalances["1"]))
 }
+
+func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithoutGroupBy() {
+	ctx := context.Background()
+
+	for i := 0; i < 10; i++ {
+		if err := dbSvc.InsertBalance(ctx, domain.MarketBalance{
+			MarketID:     "90000",
+			BaseBalance:  decimal.NewFromInt(int64(50 + i)),
+			QuoteBalance: decimal.NewFromInt(int64(500 + i)),
+			Time:         time.Now(),
+		}); err != nil {
+			idb.FailNow(err.Error())
+		}
+	}
+
+	startTime := time.Date(
+		application.StartYear,
+		1,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+	endTime := time.Date(
+		application.StartYear,
+		12,
+		1,
+		0,
+		0,
+		0,
+		0,
+		time.UTC,
+	)
+
+	page := domain.Page{
+		Number: 1,
+		Size:   10,
+	}
+
+	marketsBalances, err := dbSvc.GetBalancesForMarkets(
+		ctx,
+		startTime,
+		endTime,
+		page,
+		"",
+		[]string{"90000"}...,
+	)
+	if err != nil {
+		idb.FailNow(err.Error())
+	}
+
+	idb.Equal(10, len(marketsBalances["90000"]))
+}
