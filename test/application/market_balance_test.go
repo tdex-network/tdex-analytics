@@ -14,6 +14,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 		ctx       context.Context
 		timeRange application.TimeRange
 		marketIDs []string
+		timeFrame application.TimeFrame
 	}
 	tests := []struct {
 		name             string
@@ -30,6 +31,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					CustomPeriod:     nil,
 				},
 				marketIDs: nil,
+				timeFrame: application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -45,6 +47,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					},
 				},
 				marketIDs: nil,
+				timeFrame: application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -60,6 +63,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					},
 				},
 				marketIDs: nil,
+				timeFrame: application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -75,6 +79,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					},
 				},
 				marketIDs: nil,
+				timeFrame: application.TimeFrameFourHours,
 			},
 			wantErr: true,
 		},
@@ -87,6 +92,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					CustomPeriod:     nil,
 				},
 				marketIDs: []string{"1"},
+				timeFrame: application.TzNil,
 			},
 			validateResponse: func(balances *application.MarketsBalances) error {
 				if len(balances.MarketsBalances) != 1 {
@@ -106,6 +112,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					CustomPeriod:     nil,
 				},
 				marketIDs: []string{"1"},
+				timeFrame: application.TzNil,
 			},
 			validateResponse: func(balances *application.MarketsBalances) error {
 				if len(balances.MarketsBalances) != 1 {
@@ -131,6 +138,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					CustomPeriod:     nil,
 				},
 				marketIDs: []string{"1"},
+				timeFrame: application.TimeFrameFourHours,
 			},
 			validateResponse: func(balances *application.MarketsBalances) error {
 				if len(balances.MarketsBalances) != 1 {
@@ -156,6 +164,29 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					CustomPeriod:     nil,
 				},
 				marketIDs: []string{"1"},
+				timeFrame: application.TimeFrameFourHours,
+			},
+			validateResponse: func(balances *application.MarketsBalances) error {
+				if len(balances.MarketsBalances) != 1 {
+					return errors.New("expected balances for 1 markets")
+				}
+
+				return nil
+			},
+			wantErr: false,
+		},
+		{
+			name: "time frame nil for custom period",
+			args: args{
+				ctx: ctx,
+				timeRange: application.TimeRange{
+					CustomPeriod: &application.CustomPeriod{
+						StartDate: "2022-11-08T09:11:35.600Z",
+						EndDate:   "2022-11-08T09:16:35.600Z",
+					},
+				},
+				marketIDs: []string{"1"},
+				timeFrame: application.TzNil,
 			},
 			validateResponse: func(balances *application.MarketsBalances) error {
 				if len(balances.MarketsBalances) != 1 {
@@ -176,7 +207,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 					Number: 1,
 					Size:   10000000,
 				},
-				application.Default5MinTimeFrame,
+				tt.args.timeFrame,
 				tt.args.marketIDs...)
 			if (err != nil) != tt.wantErr {
 				a.T().Errorf("GetBalances() error = %v, wantErr %v", err, tt.wantErr)
