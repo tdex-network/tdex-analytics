@@ -133,3 +133,7 @@ func parseFilter(filter []domain.Filter) (string, []interface{}) {
 
 	return queryCondition.String(), values
 }
+
+func (p *postgresDbService) DeleteAllMarket(ctx context.Context) error {
+	return p.querier.DeleteAllMarkets(ctx)
+}
