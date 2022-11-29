@@ -10,4 +10,5 @@ type MarketRepository interface {
 		filter []Filter,
 		page Page,
 	) ([]Market, error)
+	DeleteAllMarket(ctx context.Context) error
 }

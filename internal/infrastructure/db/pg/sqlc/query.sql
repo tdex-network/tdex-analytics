@@ -7,3 +7,6 @@ INSERT INTO market (
              $1, $2, $3, $4
     )
     RETURNING *;
+
+-- name: DeleteAllMarkets :exec
+DELETE FROM market;
