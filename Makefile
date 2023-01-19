@@ -94,3 +94,8 @@ dev:
 ## dev-down: stop dev env, remove volumes
 dev-down:
 	docker-compose --env-file .env.dev down -v
+
+## sqlc: gen sql
+sqlc:
+	@echo "gen sql..."
+	cd internal/infrastructure/db/pg; sqlc generate

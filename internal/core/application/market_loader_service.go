@@ -10,8 +10,8 @@ import (
 )
 
 const (
-	//every day at 00:00
-	fetchMarketsCronExpression = "0 0 * * *"
+	//cron expression for fetching markets, every hour
+	fetchMarketsCronExpression = "0 * * * *"
 )
 
 type MarketsLoaderService interface {
@@ -59,6 +59,11 @@ func (m *marketsLoaderService) FetchMarkets() {
 	)
 	if err != nil {
 		log.Errorf("FetchMarkets -> FetchProvidersMarkets: %v", err)
+		return
+	}
+
+	if err := m.marketRepository.DeleteAllMarket(context.Background()); err != nil {
+		log.Errorf("FetchMarkets -> DeleteAllMarket: %v", err)
 		return
 	}
 
