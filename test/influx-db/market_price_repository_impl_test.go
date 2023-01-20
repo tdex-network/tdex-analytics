@@ -3,7 +3,6 @@ package influxdbtest
 import (
 	"context"
 	"github.com/shopspring/decimal"
-	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"time"
 )
@@ -28,9 +27,10 @@ func (idb *InfluxDBTestSuit) TestInsertMarketPrice() {
 func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 	ctx := context.Background()
 
+	marketID := "999"
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertPrice(ctx, domain.MarketPrice{
-			MarketID:   "999",
+			MarketID:   marketID,
 			BasePrice:  decimal.NewFromInt(int64(50 + i)),
 			BaseAsset:  "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 			QuotePrice: decimal.NewFromInt(int64(500 + i)),
@@ -42,7 +42,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 	}
 
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -52,7 +52,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -73,18 +73,18 @@ func (idb *InfluxDBTestSuit) TestGetMarketPrice() {
 		endTime,
 		page,
 		"1mo",
-		[]string{"999"}...,
+		[]string{marketID}...,
 	)
 	if err != nil {
 		idb.FailNow(err.Error())
 	}
 
-	idb.Equal(10, len(marketsPrices["999"]))
+	idb.Equal(10, len(marketsPrices[marketID]))
 }
 
 func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -94,7 +94,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -127,9 +127,10 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithPagination() {
 func (idb *InfluxDBTestSuit) TestGetMarketPriceWithoutGrouping() {
 	ctx := context.Background()
 
+	marketID := "999"
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertPrice(ctx, domain.MarketPrice{
-			MarketID:   "999",
+			MarketID:   marketID,
 			BasePrice:  decimal.NewFromInt(int64(50 + i)),
 			BaseAsset:  "5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225",
 			QuotePrice: decimal.NewFromInt(int64(500 + i)),
@@ -141,7 +142,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithoutGrouping() {
 	}
 
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -151,7 +152,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithoutGrouping() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -172,11 +173,11 @@ func (idb *InfluxDBTestSuit) TestGetMarketPriceWithoutGrouping() {
 		endTime,
 		page,
 		"",
-		[]string{"999"}...,
+		[]string{marketID}...,
 	)
 	if err != nil {
 		idb.FailNow(err.Error())
 	}
 
-	idb.Equal(10, len(marketsPrices["999"]))
+	idb.Equal(10, len(marketsPrices[marketID]))
 }
