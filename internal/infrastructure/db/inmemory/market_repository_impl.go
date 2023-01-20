@@ -107,11 +107,9 @@ func (m *inMemoryMarketRepository) InactivateMarket(
 	m.mtx.Lock()
 	defer m.mtx.Unlock()
 
-	for _, v := range m.markets {
-		if v.ID == marketID {
-			v.Active = false
-			m.markets[v.ID] = v
-		}
+	if val, ok := m.markets[marketID]; ok {
+		val.Active = false
+		m.markets[marketID] = val
 	}
 
 	return nil
