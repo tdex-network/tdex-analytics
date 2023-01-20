@@ -7,19 +7,11 @@ package queries
 
 import (
 	"context"
+	"database/sql"
 )
 
-const deleteAllMarkets = `-- name: DeleteAllMarkets :exec
-DELETE FROM market
-`
-
-func (q *Queries) DeleteAllMarkets(ctx context.Context) error {
-	_, err := q.db.ExecContext(ctx, deleteAllMarkets)
-	return err
-}
-
 const getAllMarkets = `-- name: GetAllMarkets :many
-SELECT market_id, provider_name, url, base_asset, quote_asset FROM market
+SELECT market_id, provider_name, url, base_asset, quote_asset, active FROM market
 `
 
 func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
@@ -37,6 +29,7 @@ func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
 			&i.Url,
 			&i.BaseAsset,
 			&i.QuoteAsset,
+			&i.Active,
 		); err != nil {
 			return nil, err
 		}
@@ -53,10 +46,10 @@ func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
 
 const insertMarket = `-- name: InsertMarket :one
 INSERT INTO market (
-    provider_name,url,base_asset,quote_asset) VALUES (
-             $1, $2, $3, $4
+    provider_name,url,base_asset,quote_asset,active) VALUES (
+             $1, $2, $3, $4, $5
     )
-    RETURNING market_id, provider_name, url, base_asset, quote_asset
+    RETURNING market_id, provider_name, url, base_asset, quote_asset, active
 `
 
 type InsertMarketParams struct {
@@ -64,6 +57,7 @@ type InsertMarketParams struct {
 	Url          string
 	BaseAsset    string
 	QuoteAsset   string
+	Active       sql.NullBool
 }
 
 func (q *Queries) InsertMarket(ctx context.Context, arg InsertMarketParams) (Market, error) {
@@ -72,6 +66,7 @@ func (q *Queries) InsertMarket(ctx context.Context, arg InsertMarketParams) (Mar
 		arg.Url,
 		arg.BaseAsset,
 		arg.QuoteAsset,
+		arg.Active,
 	)
 	var i Market
 	err := row.Scan(
@@ -80,6 +75,21 @@ func (q *Queries) InsertMarket(ctx context.Context, arg InsertMarketParams) (Mar
 		&i.Url,
 		&i.BaseAsset,
 		&i.QuoteAsset,
+		&i.Active,
 	)
 	return i, err
+}
+
+const updateActive = `-- name: UpdateActive :exec
+UPDATE market set active = $1 where market_id = $2
+`
+
+type UpdateActiveParams struct {
+	Active   sql.NullBool
+	MarketID sql.NullInt32
+}
+
+func (q *Queries) UpdateActive(ctx context.Context, arg UpdateActiveParams) error {
+	_, err := q.db.ExecContext(ctx, updateActive, arg.Active, arg.MarketID)
+	return err
 }

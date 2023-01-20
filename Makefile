@@ -70,6 +70,9 @@ pg:
 createdb:
 	docker exec tdexa-postgres createdb --username=root --owner=root tdexa
 
+## recreatedb: drop and create main and test db
+recreatedb: dropdb createdb
+
 ## dropdb: drops db inside docker container
 dropdb:
 	docker exec tdexa-postgres dropdb tdexa
@@ -94,6 +97,39 @@ dev:
 ## dev-down: stop dev env, remove volumes
 dev-down:
 	docker-compose --env-file .env.dev down -v
+
+## mig_file: creates pg migration file(eg. make FILE=init mig_file)
+mig_file:
+	migrate create -ext sql -dir ./internal/infrastructure/db/pg/migrations/ $(FILE)
+
+## mig_up_test: creates test db schema
+mig_up_test:
+	@echo "creating db schema..."
+	@migrate -database "postgres://root:secret@localhost:5432/tdexa-test?sslmode=disable" -path ./internal/infrastructure/db/pg/migrations/ up
+
+## mig_up: creates db schema
+mig_up:
+	@echo "creating db schema..."
+	@migrate -database "postgres://root:secret@localhost:5432/tdexa?sslmode=disable" -path ./internal/infrastructure/db/pg/migrations/ up
+
+## mig_down_test: apply down migration on test db
+mig_down_test:
+	@echo "migration down on test db..."
+	@migrate -database "postgres://root:secret@localhost:5432/tdexa-test?sslmode=disable" -path ./internal/infrastructure/db/pg/migrations/ down
+
+## mig_down: apply down migration
+mig_down:
+	@echo "migration down..."
+	@migrate -database "postgres://root:secret@localhost:5432/tdexa?sslmode=disable" -path ./internal/infrastructure/db/pg/migrations/ down
+
+## mig_down_yes: apply down migration without prompt
+mig_down_yes:
+	@echo "migration down..."
+	@"yes" | migrate -database "postgres://root:secret@localhost:5432/tdexa?sslmode=disable" -path ./internal/infrastructure/db/pg/migrations/ down
+
+## vet_db: check if mig_up and mig_down are ok
+vet_db: recreatedb mig_up mig_down_yes
+	@echo "vet db migration scripts..."
 
 ## sqlc: gen sql
 sqlc:

@@ -131,6 +131,7 @@ func (a *analyticsHandler) ListMarkets(
 				Url:        v.Url,
 				BaseAsset:  v.BaseAsset,
 				QuoteAsset: v.QuoteAsset,
+				Active:     v.Active,
 			},
 		})
 	}

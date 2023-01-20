@@ -56,6 +56,7 @@ func (m marketService) ListMarkets(
 			Url:        v.Url,
 			BaseAsset:  v.BaseAsset,
 			QuoteAsset: v.QuoteAsset,
+			Active:     v.Active,
 		})
 	}
 

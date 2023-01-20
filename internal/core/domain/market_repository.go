@@ -10,5 +10,6 @@ type MarketRepository interface {
 		filter []Filter,
 		page Page,
 	) ([]Market, error)
-	DeleteAllMarket(ctx context.Context) error
+	ActivateMarket(ctx context.Context, marketID int) error
+	InactivateMarket(ctx context.Context, marketID int) error
 }

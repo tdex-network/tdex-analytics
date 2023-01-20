@@ -6,6 +6,7 @@ type Market struct {
 	Url          string
 	BaseAsset    string
 	QuoteAsset   string
+	Active       bool
 }
 
 type Filter struct {

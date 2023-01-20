@@ -3,6 +3,7 @@ package dbpg
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"fmt"
 	"github.com/lib/pq"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
@@ -22,6 +23,10 @@ func (p *postgresDbService) InsertMarket(
 		Url:          market.Url,
 		BaseAsset:    market.BaseAsset,
 		QuoteAsset:   market.QuoteAsset,
+		Active: sql.NullBool{
+			Bool:  market.Active,
+			Valid: true,
+		},
 	}); err != nil {
 		if pqErr := err.(*pq.Error); pqErr != nil {
 			if pqErr.Code == uniqueViolation {
@@ -49,6 +54,7 @@ func (p *postgresDbService) GetAllMarkets(
 			Url:          v.Url,
 			BaseAsset:    v.BaseAsset,
 			QuoteAsset:   v.QuoteAsset,
+			Active:       v.Active.Bool,
 		})
 	}
 
@@ -82,8 +88,9 @@ func (p *postgresDbService) GetAllMarketsForFilter(
 		var url string
 		var baseAsset string
 		var quoteAsset string
+		var active bool
 
-		if err = rows.Scan(&id, &providerName, &url, &baseAsset, &quoteAsset); err != nil {
+		if err = rows.Scan(&id, &providerName, &url, &baseAsset, &quoteAsset, &active); err != nil {
 			return nil, err
 		}
 
@@ -93,6 +100,7 @@ func (p *postgresDbService) GetAllMarketsForFilter(
 			Url:          url,
 			BaseAsset:    baseAsset,
 			QuoteAsset:   quoteAsset,
+			Active:       active,
 		})
 	}
 
@@ -134,6 +142,28 @@ func parseFilter(filter []domain.Filter) (string, []interface{}) {
 	return queryCondition.String(), values
 }
 
-func (p *postgresDbService) DeleteAllMarket(ctx context.Context) error {
-	return p.querier.DeleteAllMarkets(ctx)
+func (p *postgresDbService) ActivateMarket(ctx context.Context, marketID int) error {
+	return p.querier.UpdateActive(ctx, queries.UpdateActiveParams{
+		Active: sql.NullBool{
+			Bool:  true,
+			Valid: true,
+		},
+		MarketID: sql.NullInt32{
+			Int32: int32(marketID),
+			Valid: true,
+		},
+	})
+}
+
+func (p *postgresDbService) InactivateMarket(ctx context.Context, marketID int) error {
+	return p.querier.UpdateActive(ctx, queries.UpdateActiveParams{
+		Active: sql.NullBool{
+			Bool:  false,
+			Valid: true,
+		},
+		MarketID: sql.NullInt32{
+			Int32: int32(marketID),
+			Valid: true,
+		},
+	})
 }
