@@ -146,9 +146,3 @@ func (m *marketsLoaderService) updateMarketActiveStatusAndInsertNew(
 
 	return nil
 }
-
-func isSameMarket(m1, m2 domain.Market) bool {
-	return m1.Url == m2.Url &&
-		m1.BaseAsset == m2.BaseAsset &&
-		m1.QuoteAsset == m2.QuoteAsset
-}
