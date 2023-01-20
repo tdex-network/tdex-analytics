@@ -21,6 +21,7 @@ const (
 	LastThreeMonths
 	YearToDate
 	All
+	LastYear
 
 	StartYear = 2022
 
@@ -199,10 +200,10 @@ func (t *TimeRange) validate() error {
 type PredefinedPeriod int
 
 func (p *PredefinedPeriod) validate() error {
-	if *p > All {
+	if *p > LastYear {
 		return hexerr.NewApplicationLayerError(
 			hexerr.InvalidRequest,
-			fmt.Sprintf("PredefinedPeriod cant be > %v", All),
+			fmt.Sprintf("PredefinedPeriod cant be > %v", LastYear),
 		)
 	}
 
@@ -242,6 +243,7 @@ func (t *TimeRange) getStartAndEndTime(now time.Time) (startTime time.Time, endT
 
 	if t.PredefinedPeriod != nil {
 		var start time.Time
+		endTime = now
 		switch *t.PredefinedPeriod {
 		case LastHour:
 			start = now.Add(time.Duration(-60) * time.Minute)
@@ -256,10 +258,13 @@ func (t *TimeRange) getStartAndEndTime(now time.Time) (startTime time.Time, endT
 			start = time.Date(y, time.January, 1, 0, 0, 0, 0, time.UTC)
 		case All:
 			start = time.Date(StartYear, time.January, 1, 0, 0, 0, 0, time.UTC)
+		case LastYear:
+			lastYear := now.Year() - 1
+			start = time.Date(lastYear, time.January, 1, 0, 0, 0, 0, time.UTC)
+			endTime = time.Date(lastYear, time.December, 31, 23, 59, 59, 0, time.UTC)
 		}
 
 		startTime = start
-		endTime = now
 	}
 
 	return
