@@ -89,7 +89,7 @@ func init() {
 	vip.SetDefault(RegistryUrl, "https://raw.githubusercontent.com/tdex-network/tdex-registry/master/registry.json")
 	vip.SetDefault(LogLevelKey, int(log.DebugLevel))
 	vip.SetDefault(PriceAmount, 1000)
-	vip.SetDefault(JobPeriodInMinutes, "5")
+	vip.SetDefault(JobPeriodInMinutes, "1")
 	vip.SetDefault(ExplorerUrl, "https://blockstream.info/liquid/api/")
 
 	if vip.GetString(InfluxDbAuthToken) == "" {

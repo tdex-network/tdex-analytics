@@ -177,3 +177,52 @@ func (s *PgDbTestSuite) TestGetMarketsForFilterWithPagination() {
 
 	s.Equal(1, len(markets))
 }
+
+func (s *PgDbTestSuite) TestActivateInactivateMarket() {
+	var (
+		filter1 = []domain.Filter{
+			{
+				Url:        "dummyurl1",
+				BaseAsset:  "dummybaseasset1",
+				QuoteAsset: "dummyquoteasset1",
+			},
+		}
+		page = domain.Page{
+			Number: 1,
+			Size:   20,
+		}
+	)
+	markets, err := pgDbSvc.GetAllMarkets(context.Background())
+	s.NoError(err)
+
+	activeCount := 0
+	for _, v := range markets {
+		if v.Active {
+			activeCount++
+		}
+	}
+
+	s.Equal(2, activeCount)
+
+	err = pgDbSvc.ActivateMarket(context.Background(), 1)
+	s.NoError(err)
+
+	market, err := pgDbSvc.GetAllMarketsForFilter(context.Background(), filter1, page)
+	s.NoError(err)
+	s.Equal(true, market[0].Active)
+
+	err = pgDbSvc.InactivateMarket(context.Background(), 1)
+	s.NoError(err)
+
+	market, err = pgDbSvc.GetAllMarketsForFilter(context.Background(), filter1, page)
+	s.NoError(err)
+	s.Equal(false, market[0].Active)
+
+	activeMarkets, err := pgDbSvc.GetMarketsForActiveIndicator(context.Background(), true)
+	s.NoError(err)
+	s.Equal(2, len(activeMarkets))
+
+	inactiveMarkets, err := pgDbSvc.GetMarketsForActiveIndicator(context.Background(), false)
+	s.NoError(err)
+	s.Equal(4, len(inactiveMarkets))
+}

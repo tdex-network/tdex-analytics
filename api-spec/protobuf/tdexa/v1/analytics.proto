@@ -143,6 +143,7 @@ message MarketProvider {
   string url = 1;
   string base_asset = 2;
   string quote_asset = 3;
+  bool active = 4;
 }
 
 message Page {

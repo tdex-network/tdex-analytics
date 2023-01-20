@@ -307,7 +307,7 @@ func (m *marketPriceService) FetchPricesForAllMarkets() {
 	log.Infof("job FetchPricesForAllMarkets at: %v", time.Now())
 	ctx := context.Background()
 
-	markets, err := m.marketRepository.GetAllMarkets(ctx)
+	markets, err := m.marketRepository.GetMarketsForActiveIndicator(ctx, true)
 	if err != nil {
 		log.Errorf("FetchPricesForAllMarkets -> GetAllMarkets: %v", err)
 		return
