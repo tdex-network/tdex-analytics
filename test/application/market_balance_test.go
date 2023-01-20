@@ -147,7 +147,7 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 
 				//loaded balances are sorted in asc order, validate that first one is from prev month
 				for _, v := range balances.MarketsBalances {
-					if v[0].Time.Month() != time.Now().Month()-1 {
+					if !isPreviousMonth(v[0].Time) {
 						return errors.New("expected that first balance is from last month")
 					}
 				}

@@ -14,4 +14,5 @@ type Market struct {
 	Url          string
 	BaseAsset    string
 	QuoteAsset   string
+	Active       sql.NullBool
 }

@@ -4,10 +4,12 @@ import (
 	"github.com/stretchr/testify/suite"
 	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
 	"os"
+	"time"
 )
 
 var (
-	dbSvc dbinflux.Service
+	dbSvc       dbinflux.Service
+	currentYear = time.Now().Year()
 )
 
 type InfluxDBTestSuit struct {

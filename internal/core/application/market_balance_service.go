@@ -166,7 +166,7 @@ func (m *marketBalanceService) FetchBalancesForAllMarkets() {
 	log.Infof("job FetchBalancesForAllMarkets at: %v", time.Now())
 	ctx := context.Background()
 
-	markets, err := m.marketRepository.GetAllMarkets(ctx)
+	markets, err := m.marketRepository.GetMarketsForActiveIndicator(ctx, true)
 	if err != nil {
 		log.Errorf("FetchBalancesForAllMarkets -> GetAllMarkets: %v", err)
 		return

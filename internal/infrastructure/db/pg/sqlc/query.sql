@@ -3,10 +3,13 @@ SELECT * FROM market;
 
 -- name: InsertMarket :one
 INSERT INTO market (
-    provider_name,url,base_asset,quote_asset) VALUES (
-             $1, $2, $3, $4
+    provider_name,url,base_asset,quote_asset,active) VALUES (
+             $1, $2, $3, $4, $5
     )
     RETURNING *;
 
--- name: DeleteAllMarkets :exec
-DELETE FROM market;
+-- name: UpdateActive :exec
+UPDATE market set active = $1 where market_id = $2;
+
+-- name: GetMarketsForActiveIndicator :many
+SELECT * FROM market where active = $1;
