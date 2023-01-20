@@ -51,6 +51,23 @@ func (m *inMemoryMarketRepository) GetAllMarkets(
 	return resp, nil
 }
 
+func (m *inMemoryMarketRepository) GetMarketsForActiveIndicator(
+	ctx context.Context,
+	active bool,
+) ([]domain.Market, error) {
+	m.mtx.RLock()
+	defer m.mtx.RUnlock()
+
+	resp := make([]domain.Market, 0)
+	for _, v := range m.markets {
+		if v.Active == active {
+			resp = append(resp, v)
+		}
+	}
+
+	return resp, nil
+}
+
 func (m *inMemoryMarketRepository) GetAllMarketsForFilter(
 	ctx context.Context,
 	filter []domain.Filter,

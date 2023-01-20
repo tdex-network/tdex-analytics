@@ -44,6 +44,40 @@ func (q *Queries) GetAllMarkets(ctx context.Context) ([]Market, error) {
 	return items, nil
 }
 
+const getMarketsForActiveIndicator = `-- name: GetMarketsForActiveIndicator :many
+SELECT market_id, provider_name, url, base_asset, quote_asset, active FROM market where active = $1
+`
+
+func (q *Queries) GetMarketsForActiveIndicator(ctx context.Context, active sql.NullBool) ([]Market, error) {
+	rows, err := q.db.QueryContext(ctx, getMarketsForActiveIndicator, active)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Market
+	for rows.Next() {
+		var i Market
+		if err := rows.Scan(
+			&i.MarketID,
+			&i.ProviderName,
+			&i.Url,
+			&i.BaseAsset,
+			&i.QuoteAsset,
+			&i.Active,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const insertMarket = `-- name: InsertMarket :one
 INSERT INTO market (
     provider_name,url,base_asset,quote_asset,active) VALUES (

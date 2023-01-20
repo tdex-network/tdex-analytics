@@ -107,6 +107,33 @@ func (p *postgresDbService) GetAllMarketsForFilter(
 	return res, nil
 }
 
+func (p *postgresDbService) GetMarketsForActiveIndicator(
+	ctx context.Context,
+	active bool,
+) ([]domain.Market, error) {
+	ms, err := p.querier.GetMarketsForActiveIndicator(ctx, sql.NullBool{
+		Bool:  active,
+		Valid: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	markets := make([]domain.Market, 0, len(ms))
+	for _, v := range ms {
+		markets = append(markets, domain.Market{
+			ID:           int(v.MarketID.Int32),
+			ProviderName: v.ProviderName,
+			Url:          v.Url,
+			BaseAsset:    v.BaseAsset,
+			QuoteAsset:   v.QuoteAsset,
+			Active:       v.Active.Bool,
+		})
+	}
+
+	return markets, nil
+}
+
 func generateQueryAndValues(filter []domain.Filter) (string, []interface{}) {
 	query := bytes.NewBuffer([]byte("SELECT * FROM market"))
 	queryCondition, values := parseFilter(filter)

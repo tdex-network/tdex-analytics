@@ -10,3 +10,6 @@ INSERT INTO market (
 
 -- name: UpdateActive :exec
 UPDATE market set active = $1 where market_id = $2;
+
+-- name: GetMarketsForActiveIndicator :many
+SELECT * FROM market where active = $1;
