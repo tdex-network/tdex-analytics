@@ -47,7 +47,7 @@ func TestUpdateMarketActiveStatusAndInsertNew(t *testing.T) {
 		validate    func(t *testing.T, repo domain.MarketRepository)
 	}{
 		{
-			name: "test_1",
+			name: "activate_existing_market",
 			fields: fields{
 				marketRepository: inmemory.NewRepository(),
 			},
@@ -87,7 +87,7 @@ func TestUpdateMarketActiveStatusAndInsertNew(t *testing.T) {
 			},
 		},
 		{
-			name: "test_2",
+			name: "deactivate_existing_markets",
 			fields: fields{
 				marketRepository: inmemory.NewRepository(),
 			},
@@ -119,7 +119,7 @@ func TestUpdateMarketActiveStatusAndInsertNew(t *testing.T) {
 			},
 		},
 		{
-			name: "test_3",
+			name: "activate_existing_markets_and_insert_new_ones",
 			fields: fields{
 				marketRepository: inmemory.NewRepository(),
 			},
