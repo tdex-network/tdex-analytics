@@ -173,7 +173,10 @@ func TestUpdateMarketActiveStatusAndInsertNew(t *testing.T) {
 				marketRepository: tt.fields.marketRepository,
 			}
 
-			if err := m.updateMarketActiveStatusAndInsertNew(existingMarkets, tt.args.activeMarkets); (err != nil) != tt.wantErr {
+			if err := m.updateMarketActiveStatusAndInsertNew(
+				existingMarkets,
+				marketListToMap(tt.args.activeMarkets),
+			); (err != nil) != tt.wantErr {
 				t.Errorf("updateMarketActiveStatusAndInsertNew() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
@@ -222,4 +225,13 @@ func prepareMarkets2() []domain.Market {
 			Active:       false,
 		},
 	}
+}
+
+func marketListToMap(markets []domain.Market) map[string]domain.Market {
+	resp := make(map[string]domain.Market)
+	for _, v := range markets {
+		resp[v.Key()] = v
+	}
+
+	return resp
 }

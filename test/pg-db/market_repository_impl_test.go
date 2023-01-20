@@ -209,16 +209,20 @@ func (s *PgDbTestSuite) TestActivateInactivateMarket() {
 
 	market, err := pgDbSvc.GetAllMarketsForFilter(context.Background(), filter1, page)
 	s.NoError(err)
-	s.Equal(market[0].Active, true)
+	s.Equal(true, market[0].Active)
 
 	err = pgDbSvc.InactivateMarket(context.Background(), 1)
 	s.NoError(err)
 
 	market, err = pgDbSvc.GetAllMarketsForFilter(context.Background(), filter1, page)
 	s.NoError(err)
-	s.Equal(market[0].Active, false)
+	s.Equal(false, market[0].Active)
 
 	activeMarkets, err := pgDbSvc.GetMarketsForActiveIndicator(context.Background(), true)
 	s.NoError(err)
-	s.Equal(len(activeMarkets), 2)
+	s.Equal(2, len(activeMarkets))
+
+	inactiveMarkets, err := pgDbSvc.GetMarketsForActiveIndicator(context.Background(), false)
+	s.NoError(err)
+	s.Equal(4, len(inactiveMarkets))
 }

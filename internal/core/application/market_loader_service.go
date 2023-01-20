@@ -71,16 +71,17 @@ func (m *marketsLoaderService) FetchMarkets() {
 	}
 
 	//assume that external service, from which we are fetching markets, should return active markets
-	activeMarkets := make([]domain.Market, 0)
+	activeMarkets := make(map[string]domain.Market)
 	for _, v := range liquidityProviders {
 		for _, market := range v.Markets {
-			activeMarkets = append(activeMarkets, domain.Market{
+			mkt := domain.Market{
 				ProviderName: v.Name,
 				Url:          v.Endpoint,
 				BaseAsset:    market.BaseAsset,
 				QuoteAsset:   market.QuoteAsset,
 				Active:       true,
-			})
+			}
+			activeMarkets[mkt.Key()] = mkt
 		}
 	}
 
@@ -91,7 +92,7 @@ func (m *marketsLoaderService) FetchMarkets() {
 
 func (m *marketsLoaderService) updateMarketActiveStatusAndInsertNew(
 	existingMarkets []domain.Market,
-	activeMarkets []domain.Market,
+	activeMarkets map[string]domain.Market,
 ) error {
 	//since markets can go on and off, we need to update markets accordingly
 	//3 cases here:
@@ -100,17 +101,11 @@ func (m *marketsLoaderService) updateMarketActiveStatusAndInsertNew(
 	//3. active market is not in existing markets -> create new market
 	marketsNotInActiveList := make([]domain.Market, 0) //to be inactivated
 	marketsInActiveList := make([]domain.Market, 0)    //to be activated
-	for _, v1 := range existingMarkets {
-		found := false
-		for _, v2 := range activeMarkets {
-			if isSameMarket(v1, v2) {
-				found = true
-				marketsInActiveList = append(marketsInActiveList, v1)
-			}
-		}
-
-		if !found {
-			marketsNotInActiveList = append(marketsNotInActiveList, v1)
+	for _, v := range existingMarkets {
+		if _, ok := activeMarkets[v.Key()]; ok {
+			marketsInActiveList = append(marketsInActiveList, v)
+		} else {
+			marketsNotInActiveList = append(marketsNotInActiveList, v)
 		}
 	}
 
