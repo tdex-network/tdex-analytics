@@ -168,7 +168,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 
 				//loaded prices are sorted in asc order, validate that first one is from prev month
 				for _, v := range prices.MarketsPrices {
-					if v[0].Time.Month() != time.Now().Month()-1 {
+					if !isPreviousMonth(v[0].Time) {
 						return errors.New("expected that first price is from last month")
 					}
 				}
@@ -245,4 +245,14 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 			}
 		})
 	}
+}
+
+func isPreviousMonth(t time.Time) bool {
+	now := time.Now()
+	currentMonth := now.Month()
+	inputMonth := t.Month()
+	if inputMonth == currentMonth-1 || (currentMonth == 1 && inputMonth == 12) {
+		return true
+	}
+	return false
 }

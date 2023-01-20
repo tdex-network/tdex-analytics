@@ -84,7 +84,7 @@ func (m *marketsLoaderService) FetchMarkets() {
 		}
 	}
 
-	if err := m.updateMarketActiveStatusAndInsertNew(activeMarkets, existingMarkets); err != nil {
+	if err := m.updateMarketActiveStatusAndInsertNew(existingMarkets, activeMarkets); err != nil {
 		log.Errorf("FetchMarkets -> updateMarketActiveStatusAndInsertNew: %v", err)
 	}
 }
@@ -118,7 +118,7 @@ func (m *marketsLoaderService) updateMarketActiveStatusAndInsertNew(
 		for _, v := range marketsNotInActiveList {
 			if err := m.marketRepository.InactivateMarket(
 				context.Background(),
-				v.ID, //TODO does id exist
+				v.ID,
 			); err != nil {
 				return fmt.Errorf("updateMarketActiveStatusAndInsertNew -> InactivateMarket: %v", err)
 			}
@@ -129,7 +129,7 @@ func (m *marketsLoaderService) updateMarketActiveStatusAndInsertNew(
 		for _, v := range marketsInActiveList {
 			if err := m.marketRepository.ActivateMarket(
 				context.Background(),
-				v.ID, //TODO does id exist
+				v.ID,
 			); err != nil {
 				return fmt.Errorf("updateMarketActiveStatusAndInsertNew -> ActivateMarket: %v", err)
 			}
