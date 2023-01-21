@@ -3,7 +3,6 @@ package influxdbtest
 import (
 	"context"
 	"github.com/shopspring/decimal"
-	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
 	"os"
@@ -39,10 +38,10 @@ func (idb *InfluxDBTestSuit) TestInsertMarketBalance() {
 
 func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 	ctx := context.Background()
-
+	marketID := "90000"
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertBalance(ctx, domain.MarketBalance{
-			MarketID:     "90000",
+			MarketID:     marketID,
 			BaseBalance:  decimal.NewFromInt(int64(50 + i)),
 			QuoteBalance: decimal.NewFromInt(int64(500 + i)),
 			Time:         time.Now(),
@@ -52,7 +51,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 	}
 
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -62,7 +61,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -83,18 +82,18 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalance() {
 		endTime,
 		page,
 		"1mo",
-		[]string{"90000"}...,
+		[]string{marketID}...,
 	)
 	if err != nil {
 		idb.FailNow(err.Error())
 	}
 
-	idb.Equal(10, len(marketsBalances["90000"]))
+	idb.Equal(10, len(marketsBalances[marketID]))
 }
 
 func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -104,7 +103,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -137,9 +136,10 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithPagination() {
 func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithoutGroupBy() {
 	ctx := context.Background()
 
+	marketID := "90000"
 	for i := 0; i < 10; i++ {
 		if err := dbSvc.InsertBalance(ctx, domain.MarketBalance{
-			MarketID:     "90000",
+			MarketID:     marketID,
 			BaseBalance:  decimal.NewFromInt(int64(50 + i)),
 			QuoteBalance: decimal.NewFromInt(int64(500 + i)),
 			Time:         time.Now(),
@@ -149,7 +149,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithoutGroupBy() {
 	}
 
 	startTime := time.Date(
-		application.StartYear,
+		currentYear,
 		1,
 		1,
 		0,
@@ -159,7 +159,7 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithoutGroupBy() {
 		time.UTC,
 	)
 	endTime := time.Date(
-		application.StartYear,
+		currentYear,
 		12,
 		1,
 		0,
@@ -180,11 +180,11 @@ func (idb *InfluxDBTestSuit) TestGetMarketBalanceWithoutGroupBy() {
 		endTime,
 		page,
 		"",
-		[]string{"90000"}...,
+		[]string{marketID}...,
 	)
 	if err != nil {
 		idb.FailNow(err.Error())
 	}
 
-	idb.Equal(10, len(marketsBalances["90000"]))
+	idb.Equal(10, len(marketsBalances[marketID]))
 }

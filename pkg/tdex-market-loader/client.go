@@ -61,6 +61,7 @@ func (t *tdexMarketLoaderService) FetchProvidersMarkets(
 				v.Name,
 				err.Error(),
 			)
+
 			continue
 		}
 		res = append(res, LiquidityProvider{
