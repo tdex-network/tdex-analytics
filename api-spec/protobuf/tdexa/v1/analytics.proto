@@ -123,6 +123,7 @@ enum PredefinedPeriod {
   LAST_3_MONTHS = 4;
   YEAR_TO_DATE = 5;
   ALL = 6;
+  LAST_YEAR = 7;
 }
 
 message ListMarketsRequest {
