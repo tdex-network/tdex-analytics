@@ -161,7 +161,7 @@ func (t *tdexMarketLoaderService) previewPrice(
 		Asset:  market.BaseAsset,
 	})
 	if err != nil {
-		return decimal.NewFromInt(0), decimal.NewFromInt(0), err
+		return decimal.Zero, decimal.Zero, err
 	}
 
 	basePrices := make([]decimal.Decimal, 0)
