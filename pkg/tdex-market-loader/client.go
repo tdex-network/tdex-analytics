@@ -105,6 +105,11 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	ctx context.Context,
 	market Market,
 ) (*Price, error) {
+	var (
+		basePrice  decimal.Decimal
+		quotePrice decimal.Decimal
+	)
+
 	conn, close, err := t.getConn(market.Url)
 	if err != nil {
 		return nil, err
@@ -112,6 +117,40 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	defer close()
 
 	client := tdexv1.NewTradeServiceClient(conn)
+	reply, err := client.GetMarketPrice(ctx, &tdexv1.GetMarketPriceRequest{
+		Market: &tdexv1.Market{
+			BaseAsset:  market.BaseAsset,
+			QuoteAsset: market.QuoteAsset,
+		},
+	})
+	if err != nil {
+		bp, qp, err := t.previewPrice(ctx, client, market)
+		if err != nil {
+			return nil, err
+		}
+
+		basePrice = bp
+		quotePrice = qp
+	} else {
+		quotePrice = decimal.NewFromFloat(reply.GetSpotPrice())
+		basePrice = decimal.NewFromFloat(1).Div(quotePrice)
+	}
+
+	return &Price{
+		BasePrice:  basePrice,
+		QuotePrice: quotePrice,
+	}, nil
+}
+
+func (t *tdexMarketLoaderService) previewPrice(
+	ctx context.Context,
+	client tdexv1.TradeServiceClient,
+	market Market,
+) (decimal.Decimal, decimal.Decimal, error) {
+	var (
+		basePrice  decimal.Decimal
+		quotePrice decimal.Decimal
+	)
 	reply, err := client.PreviewTrade(ctx, &tdexv1.PreviewTradeRequest{
 		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
@@ -122,7 +161,7 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		Asset:  market.BaseAsset,
 	})
 	if err != nil {
-		return nil, err
+		return decimal.NewFromInt(0), decimal.NewFromInt(0), err
 	}
 
 	basePrices := make([]decimal.Decimal, 0)
@@ -132,13 +171,10 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		quotePrices = append(quotePrices, decimal.NewFromFloat(v.GetPrice().GetQuotePrice()))
 	}
 
-	basePriceAvg := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
-	quotePriceAvg := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
+	basePrice = decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
+	quotePrice = decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
 
-	return &Price{
-		BasePrice:  basePriceAvg,
-		QuotePrice: quotePriceAvg,
-	}, nil
+	return basePrice, quotePrice, nil
 }
 
 func (t *tdexMarketLoaderService) fetchLiquidityProviders() ([]LiquidityProvider, error) {
