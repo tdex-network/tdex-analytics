@@ -380,7 +380,8 @@
         "LAST_MONTH",
         "LAST_3_MONTHS",
         "YEAR_TO_DATE",
-        "ALL"
+        "ALL",
+        "LAST_YEAR"
       ],
       "default": "NULL"
     },
