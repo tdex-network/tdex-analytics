@@ -11,10 +11,8 @@ import (
 	tdexv1 "github.com/tdex-network/tdex-analytics/api-spec/protobuf/gen/tdex/v1"
 	"golang.org/x/net/proxy"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/status"
 	"io"
 	"io/ioutil"
 	"net"
@@ -101,51 +99,48 @@ func (t *tdexMarketLoaderService) FetchBalance(
 		},
 	})
 	if err != nil {
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.Unavailable {
-				requestData, err := json.Marshal(MarketReq{
-					MarketInfo: struct {
-						BaseAsset  string `json:"baseAsset"`
-						QuoteAsset string `json:"quoteAsset"`
-					}{
-						BaseAsset:  market.BaseAsset,
-						QuoteAsset: market.QuoteAsset,
-					},
-				})
-				if err != nil {
-					return nil, err
-				}
-
-				r, err := http1Req(
-					fmt.Sprintf(fetchMarketBalanceUrlRegex, market.Url),
-					t.torProxyUrl, "POST",
-					requestData,
-				)
-				if err != nil {
-					return nil, err
-				}
-
-				fetchBalanceResponse := FetchBalanceResp{}
-				if err := json.Unmarshal(r, &fetchBalanceResponse); err != nil {
-					return nil, err
-				}
-
-				baseAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.BaseAmount)
-				if err != nil {
-					return nil, err
-				}
-
-				quoteAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.QuoteAmount)
-				if err != nil {
-					return nil, err
-				}
-
-				return &Balance{
-					BaseBalance:  baseAmount,
-					QuoteBalance: quoteAmount,
-				}, nil
-			}
+		requestData, err := json.Marshal(MarketReq{
+			MarketInfo: struct {
+				BaseAsset  string `json:"baseAsset"`
+				QuoteAsset string `json:"quoteAsset"`
+			}{
+				BaseAsset:  market.BaseAsset,
+				QuoteAsset: market.QuoteAsset,
+			},
+		})
+		if err != nil {
+			return nil, err
 		}
+
+		r, err := http1Req(
+			fmt.Sprintf(fetchMarketBalanceUrlRegex, market.Url),
+			t.torProxyUrl, "POST",
+			requestData,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		fetchBalanceResponse := FetchBalanceResp{}
+		if err := json.Unmarshal(r, &fetchBalanceResponse); err != nil {
+			return nil, err
+		}
+
+		baseAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.BaseAmount)
+		if err != nil {
+			return nil, err
+		}
+
+		quoteAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.QuoteAmount)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Balance{
+			BaseBalance:  baseAmount,
+			QuoteBalance: quoteAmount,
+		}, nil
+
 		return nil, err
 	}
 
@@ -178,82 +173,76 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		},
 	})
 	if err != nil {
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.Unavailable {
-				requestData, err := json.Marshal(MarketReq{
-					MarketInfo: struct {
-						BaseAsset  string `json:"baseAsset"`
-						QuoteAsset string `json:"quoteAsset"`
-					}{
-						BaseAsset:  market.BaseAsset,
-						QuoteAsset: market.QuoteAsset,
-					},
-				})
-				if err != nil {
-					return nil, err
-				}
+		bp, qp, err := t.previewPrice(ctx, client, market)
+		if err != nil {
+			requestData, err := json.Marshal(MarketReq{
+				MarketInfo: struct {
+					BaseAsset  string `json:"baseAsset"`
+					QuoteAsset string `json:"quoteAsset"`
+				}{
+					BaseAsset:  market.BaseAsset,
+					QuoteAsset: market.QuoteAsset,
+				},
+			})
+			if err != nil {
+				return nil, err
+			}
 
-				r, err := http1Req(
-					fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
+			r, err := http1Req(
+				fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
+				t.torProxyUrl,
+				"POST",
+				requestData,
+			)
+			if err != nil {
+				r, err = http1Req(
+					fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
 					t.torProxyUrl,
 					"POST",
 					requestData,
 				)
 				if err != nil {
-					r, err = http1Req(
-						fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
-						t.torProxyUrl,
-						"POST",
-						requestData,
-					)
-					if err != nil {
-						return nil, err
-					}
-
-					fetchMarketTradePreview := FetchMarketTradePreviewResp{}
-					if err := json.Unmarshal(r, &fetchMarketTradePreview); err != nil {
-						return nil, err
-					}
-
-					basePrices := make([]decimal.Decimal, 0)
-					quotePrices := make([]decimal.Decimal, 0)
-					for _, v := range fetchMarketTradePreview.Previews {
-						basePrices = append(basePrices, decimal.NewFromFloat(v.PriceInfo.BasePrice))
-						quotePrices = append(quotePrices, decimal.NewFromInt(int64(v.PriceInfo.QuotePrice)))
-					}
-
-					bp := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
-					qp := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
-
-					return &Price{
-						BasePrice:  bp,
-						QuotePrice: qp,
-					}, nil
-				}
-
-				fetchMarketPriceResponse := FetchMarketPriceResp{}
-				if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
 					return nil, err
 				}
 
-				minAmt, err := decimal.NewFromString(fetchMarketPriceResponse.MinTradableAmount)
-				if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
+				fetchMarketTradePreview := FetchMarketTradePreviewResp{}
+				if err := json.Unmarshal(r, &fetchMarketTradePreview); err != nil {
 					return nil, err
 				}
 
-				qp := decimal.NewFromFloat(fetchMarketPriceResponse.SpotPrice)
-				bp := decimal.NewFromFloat(1).Div(minAmt)
+				basePrices := make([]decimal.Decimal, 0)
+				quotePrices := make([]decimal.Decimal, 0)
+				for _, v := range fetchMarketTradePreview.Previews {
+					basePrices = append(basePrices, decimal.NewFromFloat(v.PriceInfo.BasePrice))
+					quotePrices = append(quotePrices, decimal.NewFromInt(int64(v.PriceInfo.QuotePrice)))
+				}
+
+				bp := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
+				qp := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
 
 				return &Price{
 					BasePrice:  bp,
 					QuotePrice: qp,
 				}, nil
 			}
-		}
 
-		bp, qp, err := t.previewPrice(ctx, client, market)
-		if err != nil {
-			return nil, err
+			fetchMarketPriceResponse := FetchMarketPriceResp{}
+			if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
+				return nil, err
+			}
+
+			minAmt, err := decimal.NewFromString(fetchMarketPriceResponse.MinTradableAmount)
+			if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
+				return nil, err
+			}
+
+			qp := decimal.NewFromFloat(fetchMarketPriceResponse.SpotPrice)
+			bp := decimal.NewFromFloat(1).Div(minAmt)
+
+			return &Price{
+				BasePrice:  bp,
+				QuotePrice: qp,
+			}, nil
 		}
 
 		basePrice = bp
@@ -341,35 +330,31 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 	client := tdexv1.NewTradeServiceClient(conn)
 	reply, err := client.ListMarkets(ctx, &tdexv1.ListMarketsRequest{})
 	if err != nil {
-		if s, ok := status.FromError(err); ok {
-			if s.Code() == codes.Unavailable {
-				requestData := []byte("{}")
-				r, err := http1Req(fmt.Sprintf(
-					listMarketsUrlRegex,
-					liquidityProvider.Endpoint),
-					t.torProxyUrl,
-					"POST",
-					requestData,
-				)
-				if err != nil {
-					return nil, err
-				}
-
-				listMarketsResponse := ListMarketsResp{}
-				if err := json.Unmarshal(r, &listMarketsResponse); err != nil {
-					return nil, err
-				}
-
-				for _, v := range listMarketsResponse.Markets {
-					resp = append(resp, Market{
-						QuoteAsset: v.MarketInfo.QuoteAsset,
-						BaseAsset:  v.MarketInfo.BaseAsset,
-					})
-				}
-
-				return resp, nil
-			}
+		requestData := []byte("{}")
+		r, err := http1Req(fmt.Sprintf(
+			listMarketsUrlRegex,
+			liquidityProvider.Endpoint),
+			t.torProxyUrl,
+			"POST",
+			requestData,
+		)
+		if err != nil {
+			return nil, err
 		}
+
+		listMarketsResponse := ListMarketsResp{}
+		if err := json.Unmarshal(r, &listMarketsResponse); err != nil {
+			return nil, err
+		}
+
+		for _, v := range listMarketsResponse.Markets {
+			resp = append(resp, Market{
+				QuoteAsset: v.MarketInfo.QuoteAsset,
+				BaseAsset:  v.MarketInfo.BaseAsset,
+			})
+		}
+
+		return resp, nil
 		return nil, err
 	}
 	for _, v := range reply.GetMarkets() {
