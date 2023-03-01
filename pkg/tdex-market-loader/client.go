@@ -140,8 +140,6 @@ func (t *tdexMarketLoaderService) FetchBalance(
 			BaseBalance:  baseAmount,
 			QuoteBalance: quoteAmount,
 		}, nil
-
-		return nil, err
 	}
 
 	return &Balance{
@@ -355,8 +353,8 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 		}
 
 		return resp, nil
-		return nil, err
 	}
+
 	for _, v := range reply.GetMarkets() {
 		resp = append(resp, Market{
 			QuoteAsset: v.GetMarket().GetQuoteAsset(),
