@@ -59,7 +59,7 @@ testpgdb:
 
 # testapp: test application layer
 testapp:
-	@echo "Testing influxdb..."
+	@echo "Testing app layer..."
 	go test -v -count=1 -race ./test/application/...
 
 ## pg: starts postgres db inside docker container

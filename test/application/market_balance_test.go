@@ -216,6 +216,13 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 
 			if got != nil {
 				if err := tt.validateResponse(got); err != nil {
+					a.T().Logf("debug got %v", got)
+					for k, v := range got.MarketsBalances {
+						a.T().Logf("market %s", k)
+						for _, p := range v {
+							a.T().Logf("balance %v", p)
+						}
+					}
 					a.T().Error(err)
 				}
 			}
