@@ -19,5 +19,5 @@ type RateService interface {
 	IsFiatSymbolSupported(symbol string) (bool, error)
 
 	// GetAssetCurrency returns the currency of the asset
-	GetAssetCurrency(assetId string) (string, error)
+	GetAssetCurrency(assetId string) (string, bool)
 }

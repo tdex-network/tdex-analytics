@@ -36,7 +36,7 @@ func (_m *MockRateService) ConvertCurrency(ctx context.Context, source string, t
 }
 
 // GetAssetCurrency provides a mock function with given fields: assetId
-func (_m *MockRateService) GetAssetCurrency(assetId string) (string, error) {
+func (_m *MockRateService) GetAssetCurrency(assetId string) (string, bool) {
 	ret := _m.Called(assetId)
 
 	var r0 string
@@ -46,11 +46,11 @@ func (_m *MockRateService) GetAssetCurrency(assetId string) (string, error) {
 		r0 = ret.Get(0).(string)
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(string) error); ok {
+	var r1 bool
+	if rf, ok := ret.Get(1).(func(string) bool); ok {
 		r1 = rf(assetId)
 	} else {
-		r1 = ret.Error(1)
+		r1 = ret.Get(1).(bool)
 	}
 
 	return r0, r1
