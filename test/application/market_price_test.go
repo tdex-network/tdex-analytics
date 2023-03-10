@@ -241,6 +241,7 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 			if got != nil {
 				if err := tt.validateResponse(got); err != nil {
 					a.T().Logf("debug got %v", got)
+					a.T().Logf("debug got length %v", len(got.MarketsPrices))
 					for k, v := range got.MarketsPrices {
 						a.T().Logf("market %s", k)
 						for _, p := range v {
