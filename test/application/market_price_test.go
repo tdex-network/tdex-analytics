@@ -238,11 +238,14 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				return
 			}
 
+			a.T().Logf("got: %v", got)
 			if got != nil {
 				if err := tt.validateResponse(got); err != nil {
 					a.T().Error(err)
 				}
+				a.T().Logf("got inner end: %v", got)
 			}
+			a.T().Logf("got end: %v", got)
 		})
 	}
 }

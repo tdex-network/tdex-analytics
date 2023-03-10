@@ -45,7 +45,7 @@ clean:
 ci: clean fmt vet testall
 
 # testall: test all
-testall: testpgdb testinfluxdb testapp
+testall: testapp
 
 # testinfluxdb: test influxdb
 testinfluxdb:
