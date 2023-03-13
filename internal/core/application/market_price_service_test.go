@@ -149,8 +149,8 @@ func mockRater(
 	raterMock := new(port.MockRateService)
 	raterMock.On("ConvertCurrency", mock.Anything, baseCurrency, mock.Anything).Return(baseResult, err)
 	raterMock.On("ConvertCurrency", mock.Anything, quoteCurrency, mock.Anything).Return(quoteResult, err)
-	raterMock.On("GetAssetCurrency", baseAssetID).Return(baseCurrency, err)
-	raterMock.On("GetAssetCurrency", quoteAssetID).Return(quoteCurrency, err)
+	raterMock.On("GetAssetCurrency", baseAssetID).Return(baseCurrency, true)
+	raterMock.On("GetAssetCurrency", quoteAssetID).Return(quoteCurrency, true)
 	raterMock.On("IsFiatSymbolSupported", baseAssetID).Return(isBaseAssetStable, nil)
 	raterMock.On("IsFiatSymbolSupported", quoteAssetID).Return(isQuoteAssetStable, nil)
 

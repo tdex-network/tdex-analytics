@@ -8,6 +8,11 @@ import (
 	"time"
 )
 
+var (
+	now          = time.Now().Format(time.RFC3339)
+	fourHoursAgo = time.Now().Add(-4 * time.Hour).Format(time.RFC3339)
+)
+
 func (a *AppSvcTestSuit) TestGetMarketPrice() {
 	type args struct {
 		ctx               context.Context
@@ -203,8 +208,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				ctx: ctx,
 				timeRange: application.TimeRange{
 					CustomPeriod: &application.CustomPeriod{
-						StartDate: "2022-11-08T09:11:35.600Z",
-						EndDate:   "2022-11-08T09:16:35.600Z",
+						StartDate: fourHoursAgo,
+						EndDate:   now,
 					},
 				},
 				referenceCurrency: "EUR",
@@ -240,6 +245,14 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 
 			if got != nil {
 				if err := tt.validateResponse(got); err != nil {
+					a.T().Logf("debug got %v", got)
+					a.T().Logf("debug got length %v", len(got.MarketsPrices))
+					for k, v := range got.MarketsPrices {
+						a.T().Logf("market %s", k)
+						for _, p := range v {
+							a.T().Logf("price %v", p)
+						}
+					}
 					a.T().Error(err)
 				}
 			}

@@ -191,13 +191,10 @@ func (e *exchangeRateWrapper) IsFiatSymbolSupported(symbol string) (bool, error)
 
 func (e *exchangeRateWrapper) GetAssetCurrency(
 	assetId string,
-) (string, error) {
+) (string, bool) {
 	currency, ok := e.assetCurrencySymbolPair[assetId]
-	if !ok {
-		return "", fmt.Errorf("asset %s not found", assetId)
-	}
 
-	return currency, nil
+	return currency, ok
 }
 
 type CryptoCoin struct {
@@ -233,8 +230,8 @@ func (e *exchangeRateWrapper) isCryptoSymbol(
 }
 
 // getCryptoToFiatRate returns the rate of one source crypt coin to the target fiat
-//data are fetched from coin gecko and in order to prevent rate limit errors, the
-//rates are cached and reloaded every coinGeckoRefreshInterval
+// data are fetched from coin gecko and in order to prevent rate limit errors, the
+// rates are cached and reloaded every coinGeckoRefreshInterval
 func (e *exchangeRateWrapper) getCryptoToFiatRate(
 	ctx context.Context,
 	source string,

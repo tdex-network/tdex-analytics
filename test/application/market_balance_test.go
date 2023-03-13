@@ -9,7 +9,6 @@ import (
 )
 
 func (a *AppSvcTestSuit) TestGetMarketBalance() {
-
 	type args struct {
 		ctx       context.Context
 		timeRange application.TimeRange
@@ -181,8 +180,8 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 				ctx: ctx,
 				timeRange: application.TimeRange{
 					CustomPeriod: &application.CustomPeriod{
-						StartDate: "2022-11-08T09:11:35.600Z",
-						EndDate:   "2022-11-08T09:16:35.600Z",
+						StartDate: fourHoursAgo,
+						EndDate:   now,
 					},
 				},
 				marketIDs: []string{"1"},
@@ -216,6 +215,14 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 
 			if got != nil {
 				if err := tt.validateResponse(got); err != nil {
+					a.T().Logf("debug got %v", got)
+					a.T().Logf("debug got length %v", len(got.MarketsBalances))
+					for k, v := range got.MarketsBalances {
+						a.T().Logf("market %s", k)
+						for _, p := range v {
+							a.T().Logf("balance %v", p)
+						}
+					}
 					a.T().Error(err)
 				}
 			}

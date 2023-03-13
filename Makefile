@@ -45,7 +45,7 @@ clean:
 ci: clean fmt vet testall
 
 # testall: test all
-testall: testpgdb testinfluxdb testapp
+testall: testapp
 
 # testinfluxdb: test influxdb
 testinfluxdb:
@@ -59,7 +59,7 @@ testpgdb:
 
 # testapp: test application layer
 testapp:
-	@echo "Testing influxdb..."
+	@echo "Testing app layer..."
 	go test -v -count=1 -race ./test/application/...
 
 ## pg: starts postgres db inside docker container

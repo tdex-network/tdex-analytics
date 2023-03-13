@@ -198,12 +198,12 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 
 	baseAssetTickerFound, quoteAssetTickerFound, isBaseAssetStable, isQuoteAssetStable :=
 		false, false, false, false
-	baseAssetTicker, err := m.raterSvc.GetAssetCurrency(mktPrice.BaseAsset)
-	if err == nil {
+	baseAssetTicker, ok := m.raterSvc.GetAssetCurrency(mktPrice.BaseAsset)
+	if ok {
 		baseAssetTickerFound = true
 	}
-	quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(mktPrice.QuoteAsset)
-	if err == nil {
+	quoteAssetTicker, ok := m.raterSvc.GetAssetCurrency(mktPrice.QuoteAsset)
+	if ok {
 		quoteAssetTickerFound = true
 	}
 
