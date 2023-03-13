@@ -9,7 +9,6 @@ import (
 )
 
 func (a *AppSvcTestSuit) TestGetMarketBalance() {
-
 	type args struct {
 		ctx       context.Context
 		timeRange application.TimeRange
@@ -181,8 +180,8 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 				ctx: ctx,
 				timeRange: application.TimeRange{
 					CustomPeriod: &application.CustomPeriod{
-						StartDate: "2022-11-08T09:11:35.600Z",
-						EndDate:   "2022-11-08T09:16:35.600Z",
+						StartDate: fourHoursAgo,
+						EndDate:   now,
 					},
 				},
 				marketIDs: []string{"1"},
