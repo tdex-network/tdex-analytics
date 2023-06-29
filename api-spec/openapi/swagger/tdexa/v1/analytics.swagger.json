@@ -250,6 +250,16 @@
         "time": {
           "type": "string",
           "title": "point in time when market had this price"
+        },
+        "averagePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "average price for the specified time_frame"
+        },
+        "averageReferencePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "average price converted to reference one"
         }
       }
     },

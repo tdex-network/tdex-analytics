@@ -153,13 +153,15 @@ type MarketsPrices struct {
 }
 
 type Price struct {
-	BasePrice          decimal.Decimal
-	BaseAsset          string
-	BaseReferentPrice  decimal.Decimal
-	QuotePrice         decimal.Decimal
-	QuoteAsset         string
-	QuoteReferentPrice decimal.Decimal
-	Time               time.Time
+	BasePrice            decimal.Decimal
+	BaseAsset            string
+	BaseReferentPrice    decimal.Decimal
+	QuotePrice           decimal.Decimal
+	QuoteAsset           string
+	QuoteReferentPrice   decimal.Decimal
+	Time                 time.Time
+	AveragePrice         decimal.Decimal
+	AverageReferentPrice decimal.Decimal
 }
 
 type TimeRange struct {

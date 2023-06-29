@@ -88,12 +88,16 @@ func (a *analyticsHandler) MarketsPrices(
 			BaseReferencePrice, _ := v1.BaseReferentPrice.Float64()
 			quotePrice, _ := v1.QuotePrice.Float64()
 			quoteReferencePrice, _ := v1.QuoteReferentPrice.Float64()
+			averagePrice, _ := v1.AveragePrice.Float64()
+			averageReferentPrice, _ := v1.AverageReferentPrice.Float64()
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
-				BasePrice:           basePrice,
-				BaseReferencePrice:  BaseReferencePrice,
-				QuotePrice:          quotePrice,
-				QuoteReferencePrice: quoteReferencePrice,
-				Time:                v1.Time.String(),
+				BasePrice:             basePrice,
+				QuotePrice:            quotePrice,
+				BaseReferencePrice:    BaseReferencePrice,
+				QuoteReferencePrice:   quoteReferencePrice,
+				Time:                  v1.Time.String(),
+				AveragePrice:          averagePrice,
+				AverageReferencePrice: averageReferentPrice,
 			})
 		}
 		marketsPrices[k] = &tdexav1.MarketPrices{

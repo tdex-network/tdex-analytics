@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"github.com/tdex-network/tdex-analytics/internal/core/port"
+	"reflect"
 	"testing"
 
 	"github.com/shopspring/decimal"
@@ -155,4 +156,37 @@ func mockRater(
 	raterMock.On("IsFiatSymbolSupported", quoteAssetID).Return(isQuoteAssetStable, nil)
 
 	return raterMock
+}
+
+func TestGroupMarkets(t *testing.T) {
+	markets := []domain.Market{
+		{ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
+		{ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
+		{ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+	}
+
+	expectedMarketsMap := map[int]domain.Market{
+		1: {ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
+		2: {ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
+		3: {ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+	}
+
+	expectedMarketsWithSameAssetPair := map[string][]string{
+		"BTCUSD": {"1", "3"},
+		"ETHUSD": {"2"},
+	}
+
+	marketsMap, marketsWithSameAssetPair := groupMarkets(markets)
+
+	if !reflect.DeepEqual(marketsMap, expectedMarketsMap) {
+		t.Errorf("Expected markets map %v, but got %v", expectedMarketsMap, marketsMap)
+	}
+
+	if !reflect.DeepEqual(marketsWithSameAssetPair, expectedMarketsWithSameAssetPair) {
+		t.Errorf(
+			"Expected markets with same asset pair %v, but got %v",
+			expectedMarketsWithSameAssetPair,
+			marketsWithSameAssetPair,
+		)
+	}
 }

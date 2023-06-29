@@ -113,9 +113,23 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
-	marketsMap := make(map[int]domain.Market)
-	for _, v := range markets {
-		marketsMap[v.ID] = v
+	marketsMap, marketsWithSameAssetPair := groupMarkets(markets)
+	vwapPerMarket := make(map[string]decimal.Decimal)
+	if len(marketIDs) > 0 {
+		//TODO check time frame(start/stop) and average window
+		// it can happen that query is intensive, so we need to see based on
+		// time frame to scale up/down aggregation window
+		for _, v := range marketsWithSameAssetPair {
+			vwamp, err := m.marketPriceRepository.CalculateVWAP(
+				ctx, "1h", startTime, endTime, v...)
+			if err != nil {
+				return nil, err
+			}
+
+			for _, v1 := range v {
+				vwapPerMarket[v1] = vwamp
+			}
+		}
 	}
 
 	marketsPrices, err := m.marketPriceRepository.GetPricesForMarkets(
@@ -134,12 +148,12 @@ func (m *marketPriceService) GetPrices(
 	//purpose is to avoid multiple queries for same asset pair
 	refPricesPerAssetPair := make(map[string]referenceCurrencyPrice)
 	for k, v := range marketsPrices {
-		marketIdStr, err := strconv.Atoi(k)
+		marketIdInt, err := strconv.Atoi(k)
 		if err != nil {
 			return nil, err
 		}
-		baseAsset := marketsMap[marketIdStr].BaseAsset
-		quoteAsset := marketsMap[marketIdStr].QuoteAsset
+		baseAsset := marketsMap[marketIdInt].BaseAsset
+		quoteAsset := marketsMap[marketIdInt].QuoteAsset
 
 		prices := make([]Price, 0)
 		for _, v1 := range v {
@@ -162,14 +176,28 @@ func (m *marketPriceService) GetPrices(
 				quotePriceInRefCurrency = q
 			}
 
+			var averageReferentPrice decimal.Decimal
+			quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(v1.QuoteAsset)
+			if err == nil {
+				unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+					ctx,
+					quoteAssetTicker,
+					referenceCurrency,
+				)
+
+				averageReferentPrice = vwapPerMarket[k].Mul(unitOfQuotePriceInRefCurrency)
+			}
+
 			prices = append(prices, Price{
-				BasePrice:          v1.BasePrice,
-				BaseAsset:          v1.BaseAsset,
-				BaseReferentPrice:  basePriceInRefCurrency,
-				QuotePrice:         v1.QuotePrice,
-				QuoteAsset:         v1.QuoteAsset,
-				QuoteReferentPrice: quotePriceInRefCurrency,
-				Time:               v1.Time,
+				BasePrice:            v1.BasePrice,
+				BaseAsset:            v1.BaseAsset,
+				BaseReferentPrice:    basePriceInRefCurrency,
+				QuotePrice:           v1.QuotePrice,
+				QuoteAsset:           v1.QuoteAsset,
+				QuoteReferentPrice:   quotePriceInRefCurrency,
+				Time:                 v1.Time,
+				AveragePrice:         vwapPerMarket[k],
+				AverageReferentPrice: averageReferentPrice,
 			})
 		}
 
@@ -179,6 +207,23 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func groupMarkets(
+	markets []domain.Market,
+) (map[int]domain.Market, map[string][]string) {
+	marketsMap := make(map[int]domain.Market)
+	marketsWithSameAssetPair := make(map[string][]string)
+
+	for _, v := range markets {
+		marketsMap[v.ID] = v
+		if _, ok := marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset]; !ok {
+			marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] = make([]string, 0)
+		}
+		marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] =
+			append(marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset], strconv.Itoa(v.ID))
+	}
+	return marketsMap, marketsWithSameAssetPair
 }
 
 func (m *marketPriceService) getPricesInReferenceCurrency(

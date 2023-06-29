@@ -203,8 +203,8 @@ func (a *AppSvcTestSuit) TestGetMarketPrice() {
 				ctx: ctx,
 				timeRange: application.TimeRange{
 					CustomPeriod: &application.CustomPeriod{
-						StartDate: "2022-11-08T09:11:35.600Z",
-						EndDate:   "2022-11-08T09:16:35.600Z",
+						StartDate: time.Now().Add(-48 * time.Hour).Format(time.RFC3339Nano),
+						EndDate:   time.Now().Add(-40 * time.Hour).Format(time.RFC3339Nano),
 					},
 				},
 				referenceCurrency: "EUR",

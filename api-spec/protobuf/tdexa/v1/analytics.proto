@@ -88,6 +88,10 @@ message MarketPrice {
   double quote_reference_price = 4;
   // point in time when market had this price
   string time = 5;
+  // average price for the specified time_frame
+  double average_price = 6;
+  // average price converted to reference one
+  double average_reference_price = 7;
 }
 
 // TimeRange is flexible type used to determine time span for which specific
