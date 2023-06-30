@@ -272,7 +272,7 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 	// Try HTTP/2 endpoint.
 	reply, err := client.ListMarkets(ctx, req)
 	if err != nil {
-		requestData, _ := json.Marshal(req)
+		requestData := []byte("{}")
 		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(fmt.Sprintf(
 			listMarketsUrlRegex,
