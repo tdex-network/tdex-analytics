@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"github.com/stretchr/testify/require"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"github.com/tdex-network/tdex-analytics/internal/core/port"
 	"reflect"
@@ -165,28 +166,68 @@ func TestGroupMarkets(t *testing.T) {
 		{ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
 	}
 
-	expectedMarketsMap := map[int]domain.Market{
-		1: {ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
-		2: {ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
-		3: {ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+	testCases := []struct {
+		name                             string
+		ids                              []string
+		expectedMarketsMap               map[int]domain.Market
+		expectedMarketsWithSameAssetPair map[string][]string
+	}{
+		{
+			name: "Test with ids 1, 2, 3",
+			ids:  []string{"1", "2", "3"},
+			expectedMarketsMap: map[int]domain.Market{
+				1: {ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
+				2: {ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
+				3: {ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+			},
+			expectedMarketsWithSameAssetPair: map[string][]string{
+				"BTCUSD": {"1", "3"},
+				"ETHUSD": {"2"},
+			},
+		},
+		{
+			name: "Test with id 1",
+			ids:  []string{"1"},
+			expectedMarketsMap: map[int]domain.Market{
+				1: {ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
+				2: {ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
+				3: {ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+			},
+			expectedMarketsWithSameAssetPair: map[string][]string{
+				"BTCUSD": {"1"},
+			},
+		},
+		{
+			name: "Test with ids 1, 2",
+			ids:  []string{"1", "2"},
+			expectedMarketsMap: map[int]domain.Market{
+				1: {ID: 1, BaseAsset: "BTC", QuoteAsset: "USD"},
+				2: {ID: 2, BaseAsset: "ETH", QuoteAsset: "USD"},
+				3: {ID: 3, BaseAsset: "BTC", QuoteAsset: "USD"},
+			},
+			expectedMarketsWithSameAssetPair: map[string][]string{
+				"BTCUSD": {"1"},
+				"ETHUSD": {"2"},
+			},
+		},
 	}
 
-	expectedMarketsWithSameAssetPair := map[string][]string{
-		"BTCUSD": {"1", "3"},
-		"ETHUSD": {"2"},
-	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			marketsMap, marketsWithSameAssetPair, err := groupMarkets(markets, testCase.ids)
+			require.NoError(t, err)
 
-	marketsMap, marketsWithSameAssetPair := groupMarkets(markets)
+			if !reflect.DeepEqual(marketsMap, testCase.expectedMarketsMap) {
+				t.Errorf("Expected markets map %v, but got %v", testCase.expectedMarketsMap, marketsMap)
+			}
 
-	if !reflect.DeepEqual(marketsMap, expectedMarketsMap) {
-		t.Errorf("Expected markets map %v, but got %v", expectedMarketsMap, marketsMap)
-	}
-
-	if !reflect.DeepEqual(marketsWithSameAssetPair, expectedMarketsWithSameAssetPair) {
-		t.Errorf(
-			"Expected markets with same asset pair %v, but got %v",
-			expectedMarketsWithSameAssetPair,
-			marketsWithSameAssetPair,
-		)
+			if !reflect.DeepEqual(marketsWithSameAssetPair, testCase.expectedMarketsWithSameAssetPair) {
+				t.Errorf(
+					"Expected markets with same asset pair %v, but got %v",
+					testCase.expectedMarketsWithSameAssetPair,
+					marketsWithSameAssetPair,
+				)
+			}
+		})
 	}
 }

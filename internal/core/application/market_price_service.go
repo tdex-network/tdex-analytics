@@ -113,7 +113,11 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
-	marketsMap, marketsWithSameAssetPair := groupMarkets(markets)
+	marketsMap, marketsWithSameAssetPair, err := groupMarkets(markets, marketIDs)
+	if err != nil {
+		return nil, err
+	}
+
 	vwapPerMarket := make(map[string]decimal.Decimal)
 	if len(marketIDs) > 0 {
 		//TODO check time frame(start/stop) and average window
@@ -210,20 +214,31 @@ func (m *marketPriceService) GetPrices(
 }
 
 func groupMarkets(
-	markets []domain.Market,
-) (map[int]domain.Market, map[string][]string) {
+	markets []domain.Market, marketIdsForVwap []string,
+) (map[int]domain.Market, map[string][]string, error) {
 	marketsMap := make(map[int]domain.Market)
 	marketsWithSameAssetPair := make(map[string][]string)
+	marketIdsForVwapMap := make(map[int]bool)
+	for _, v := range marketIdsForVwap {
+		mktId, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, nil, err
+		}
+		marketIdsForVwapMap[mktId] = true
+	}
 
 	for _, v := range markets {
 		marketsMap[v.ID] = v
-		if _, ok := marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset]; !ok {
-			marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] = make([]string, 0)
+
+		if marketIdsForVwapMap[v.ID] {
+			if _, ok := marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset]; !ok {
+				marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] = make([]string, 0)
+			}
+			marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] =
+				append(marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset], strconv.Itoa(v.ID))
 		}
-		marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] =
-			append(marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset], strconv.Itoa(v.ID))
 	}
-	return marketsMap, marketsWithSameAssetPair
+	return marketsMap, marketsWithSameAssetPair, nil
 }
 
 func (m *marketPriceService) getPricesInReferenceCurrency(
