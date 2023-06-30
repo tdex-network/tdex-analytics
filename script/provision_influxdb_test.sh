@@ -10,6 +10,8 @@ docker run --name influxdb -d \
   --volume `pwd`/influxdb-conf/config.yml:/etc/influxdb2/config.yml \
   --volume `pwd`/script/balances.txt:/balances.txt \
   --volume `pwd`/script/prices.txt:/prices.txt \
+  --volume `pwd`/script/balances1.txt:/balances1.txt \
+  --volume `pwd`/script/prices1.txt:/prices1.txt \
   influxdb:2.1.1
 # wait until the database server is ready
 until docker exec influxdb influx ping
@@ -31,3 +33,5 @@ echo "TDEXA_INFLUXDB_TOKEN=${TDEXA_INFLUXDB_TOKEN}" >> $GITHUB_ENV
 # insert data
 docker exec influxdb influx write -b analytics -o tdex-network -f balances.txt
 docker exec influxdb influx write -b analytics -o tdex-network -f prices.txt
+docker exec influxdb influx write -b analytics -o tdex-network -f balances1.txt
+docker exec influxdb influx write -b analytics -o tdex-network -f prices1.txt

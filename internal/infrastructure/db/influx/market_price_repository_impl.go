@@ -124,7 +124,7 @@ func (i *influxDbService) CalculateVWAP(
 	|> range(start: %s, stop: %s)
 	|> filter(fn: (r) =>
 		r._measurement == "market_balance" and
-		r._field == "quote_balance" and
+		r._field == "base_balance" and
 		contains(value: r.market_id, set: market_ids)
 	)
 	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
@@ -134,7 +134,7 @@ func (i *influxDbService) CalculateVWAP(
 	|> range(start: %s, stop: %s)
 	|> filter(fn: (r) =>
 		r._measurement == "market_price" and
-		r._field == "base_price" and
+		r._field == "quote_price" and
 		contains(value: r.market_id, set: market_ids)
 	)
 	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)

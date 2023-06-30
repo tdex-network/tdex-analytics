@@ -7,6 +7,16 @@ import (
 	"time"
 )
 
+func (idb *InfluxDBTestSuit) TestCalcVWAP() {
+	ctx := context.Background()
+	startTime := time.Now().Add(-24 * time.Hour)
+	endTime := time.Now().Add(24 * time.Hour)
+	marketIDs := []string{"78"}
+	wamp, err := dbSvc.CalculateVWAP(ctx, "5s", startTime, endTime, marketIDs...)
+	idb.NoError(err)
+	idb.Equal(wamp.Round(2), decimal.NewFromFloat(30592.04))
+}
+
 func (idb *InfluxDBTestSuit) TestInsertMarketPrice() {
 	ctx := context.Background()
 
