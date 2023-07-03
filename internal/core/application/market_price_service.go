@@ -119,7 +119,7 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
-	vwapPerMarket := make(map[string]decimal.Decimal)
+	averagePricesInfos := make([]AveragePriceInfo, 0)
 	if len(marketIDs) > 0 {
 		averageWindow := getAverageWindow(startTime, endTime)
 		for _, v := range marketsWithSameAssetPair {
@@ -129,9 +129,29 @@ func (m *marketPriceService) GetPrices(
 				return nil, err
 			}
 
-			for _, v1 := range v {
-				vwapPerMarket[v1] = vwamp
+			var averageReferentPrice decimal.Decimal
+			mktId, err := strconv.Atoi(v[0])
+			if err != nil {
+				return nil, err
 			}
+			quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(
+				marketsMap[mktId].QuoteAsset,
+			)
+			if err == nil {
+				unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+					ctx,
+					quoteAssetTicker,
+					referenceCurrency,
+				)
+
+				averageReferentPrice = vwamp.Mul(unitOfQuotePriceInRefCurrency)
+			}
+
+			averagePricesInfos = append(averagePricesInfos, AveragePriceInfo{
+				MarketIDs:            v,
+				AveragePrice:         vwamp,
+				AverageReferentPrice: averageReferentPrice,
+			})
 		}
 	}
 
@@ -179,28 +199,14 @@ func (m *marketPriceService) GetPrices(
 				quotePriceInRefCurrency = q
 			}
 
-			var averageReferentPrice decimal.Decimal
-			quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(v1.QuoteAsset)
-			if err == nil {
-				unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
-					ctx,
-					quoteAssetTicker,
-					referenceCurrency,
-				)
-
-				averageReferentPrice = vwapPerMarket[k].Mul(unitOfQuotePriceInRefCurrency)
-			}
-
 			prices = append(prices, Price{
-				BasePrice:            v1.BasePrice,
-				BaseAsset:            v1.BaseAsset,
-				BaseReferentPrice:    basePriceInRefCurrency,
-				QuotePrice:           v1.QuotePrice,
-				QuoteAsset:           v1.QuoteAsset,
-				QuoteReferentPrice:   quotePriceInRefCurrency,
-				Time:                 v1.Time,
-				AveragePrice:         vwapPerMarket[k],
-				AverageReferentPrice: averageReferentPrice,
+				BasePrice:          v1.BasePrice,
+				BaseAsset:          v1.BaseAsset,
+				BaseReferentPrice:  basePriceInRefCurrency,
+				QuotePrice:         v1.QuotePrice,
+				QuoteAsset:         v1.QuoteAsset,
+				QuoteReferentPrice: quotePriceInRefCurrency,
+				Time:               v1.Time,
 			})
 		}
 
@@ -209,6 +215,7 @@ func (m *marketPriceService) GetPrices(
 
 	return &MarketsPrices{
 		MarketsPrices: result,
+		AveragePrices: averagePricesInfos,
 	}, nil
 }
 

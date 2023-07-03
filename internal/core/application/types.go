@@ -150,16 +150,21 @@ type Balance struct {
 type MarketsPrices struct {
 	//market_id and its Prices
 	MarketsPrices map[string][]Price
+	AveragePrices []AveragePriceInfo
 }
 
 type Price struct {
-	BasePrice            decimal.Decimal
-	BaseAsset            string
-	BaseReferentPrice    decimal.Decimal
-	QuotePrice           decimal.Decimal
-	QuoteAsset           string
-	QuoteReferentPrice   decimal.Decimal
-	Time                 time.Time
+	BasePrice          decimal.Decimal
+	BaseAsset          string
+	BaseReferentPrice  decimal.Decimal
+	QuotePrice         decimal.Decimal
+	QuoteAsset         string
+	QuoteReferentPrice decimal.Decimal
+	Time               time.Time
+}
+
+type AveragePriceInfo struct {
+	MarketIDs            []string
 	AveragePrice         decimal.Decimal
 	AverageReferentPrice decimal.Decimal
 }

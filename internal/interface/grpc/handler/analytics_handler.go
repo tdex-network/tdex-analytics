@@ -88,16 +88,12 @@ func (a *analyticsHandler) MarketsPrices(
 			BaseReferencePrice, _ := v1.BaseReferentPrice.Float64()
 			quotePrice, _ := v1.QuotePrice.Float64()
 			quoteReferencePrice, _ := v1.QuoteReferentPrice.Float64()
-			averagePrice, _ := v1.AveragePrice.Float64()
-			averageReferentPrice, _ := v1.AverageReferentPrice.Float64()
 			marketPrices = append(marketPrices, &tdexav1.MarketPrice{
-				BasePrice:             basePrice,
-				QuotePrice:            quotePrice,
-				BaseReferencePrice:    BaseReferencePrice,
-				QuoteReferencePrice:   quoteReferencePrice,
-				Time:                  v1.Time.String(),
-				AveragePrice:          averagePrice,
-				AverageReferencePrice: averageReferentPrice,
+				BasePrice:           basePrice,
+				QuotePrice:          quotePrice,
+				BaseReferencePrice:  BaseReferencePrice,
+				QuoteReferencePrice: quoteReferencePrice,
+				Time:                v1.Time.String(),
 			})
 		}
 		marketsPrices[k] = &tdexav1.MarketPrices{
@@ -105,8 +101,20 @@ func (a *analyticsHandler) MarketsPrices(
 		}
 	}
 
+	averagePrices := make([]*tdexav1.AveragePrice, 0, len(mb.AveragePrices))
+	for _, v := range mb.AveragePrices {
+		averagePrice, _ := v.AveragePrice.Float64()
+		averageRefPrice, _ := v.AverageReferentPrice.Float64()
+		averagePrices = append(averagePrices, &tdexav1.AveragePrice{
+			MarketIds:             v.MarketIDs,
+			AveragePrice:          averagePrice,
+			AverageReferencePrice: averageRefPrice,
+		})
+	}
+
 	return &tdexav1.MarketsPricesReply{
 		MarketsPrices: marketsPrices,
+		AveragePrice:  averagePrices,
 	}, nil
 }
 

@@ -144,6 +144,28 @@
         }
       }
     },
+    "v1AveragePrice": {
+      "type": "object",
+      "properties": {
+        "marketIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "title": "market_ids for which average price is calculated"
+        },
+        "averagePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "average price for the specified time_frame"
+        },
+        "averageReferencePrice": {
+          "type": "number",
+          "format": "double",
+          "title": "average price converted to reference one"
+        }
+      }
+    },
     "v1CustomPeriod": {
       "type": "object",
       "properties": {
@@ -250,16 +272,6 @@
         "time": {
           "type": "string",
           "title": "point in time when market had this price"
-        },
-        "averagePrice": {
-          "type": "number",
-          "format": "double",
-          "title": "average price for the specified time_frame"
-        },
-        "averageReferencePrice": {
-          "type": "number",
-          "format": "double",
-          "title": "average price converted to reference one"
         }
       }
     },
@@ -337,6 +349,13 @@
             "$ref": "#/definitions/v1MarketPrices"
           },
           "title": "returns map of market_id and its prices sorted by time ASC"
+        },
+        "averagePrice": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/v1AveragePrice"
+          },
+          "title": "average price"
         }
       }
     },
