@@ -114,7 +114,7 @@ func (a *analyticsHandler) MarketsPrices(
 
 	return &tdexav1.MarketsPricesReply{
 		MarketsPrices: marketsPrices,
-		AveragePrice:  averagePrices,
+		AveragePrices: averagePrices,
 	}, nil
 }
 

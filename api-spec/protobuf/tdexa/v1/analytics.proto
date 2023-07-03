@@ -73,7 +73,7 @@ message MarketsPricesReply {
   // returns map of market_id and its prices sorted by time ASC
   map<string, MarketPrices> markets_prices = 1;
   // average price
-  repeated AveragePrice average_price = 2;
+  repeated AveragePrice average_prices = 2;
 }
 message MarketPrices {
   // returns list of Market's and their prices

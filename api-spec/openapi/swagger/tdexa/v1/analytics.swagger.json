@@ -350,7 +350,7 @@
           },
           "title": "returns map of market_id and its prices sorted by time ASC"
         },
-        "averagePrice": {
+        "averagePrices": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/v1AveragePrice"
