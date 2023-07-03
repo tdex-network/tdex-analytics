@@ -3,11 +3,12 @@ package application
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"github.com/tdex-network/tdex-analytics/internal/core/port"
 	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
-	"strconv"
-	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/shopspring/decimal"
@@ -393,7 +394,7 @@ func (m *marketPriceService) FetchAndInsertPrice(
 		},
 	)
 	if err != nil {
-		log.Errorf("FetchAndInsertPrice -> FetchPrice: %v", err)
+		log.Errorf("FetchAndInsertPrice for %s -> FetchPrice: %v", market.Url, err)
 		return
 	}
 
@@ -405,7 +406,7 @@ func (m *marketPriceService) FetchAndInsertPrice(
 		QuoteAsset: market.QuoteAsset,
 		Time:       time.Now(),
 	}); err != nil {
-		log.Errorf("FetchAndInsertPrice -> InsertPrice: %v", err)
+		log.Errorf("FetchAndInsertPrice for %s -> InsertPrice: %v", market.Url, err)
 		return
 	}
 }

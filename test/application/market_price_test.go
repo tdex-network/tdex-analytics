@@ -3,9 +3,10 @@ package applicationtest
 import (
 	"context"
 	"errors"
-	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"math"
 	"time"
+
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
 )
 
 func (a *AppSvcTestSuit) TestGetMarketPrice() {
