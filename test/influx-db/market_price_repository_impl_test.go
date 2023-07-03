@@ -9,11 +9,15 @@ import (
 
 func (idb *InfluxDBTestSuit) TestCalcVWAP() {
 	ctx := context.Background()
-	startTime := time.Now().Add(-24 * time.Hour)
-	endTime := time.Now().Add(24 * time.Hour)
+	fixturesDate := time.Date(
+		2023, 6, 30, 0, 0, 0, 0, time.UTC,
+	)
+	startTime := fixturesDate.Add(-24 * time.Hour)
+	endTime := fixturesDate.Add(24 * time.Hour)
 	marketIDs := []string{"78"}
 	wamp, err := dbSvc.CalculateVWAP(ctx, "5s", startTime, endTime, marketIDs...)
 	idb.NoError(err)
+	idb.T().Log(wamp.Round(2))
 	idb.Equal(wamp.Round(2), decimal.NewFromFloat(30592.04))
 }
 
