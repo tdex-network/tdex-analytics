@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -103,7 +104,8 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	// Try HTTP/2 endpoint.
 	reply, err := client.GetMarketBalance(ctx, req)
 	if err != nil {
-		requestData, _ := json.Marshal(req)
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH BALANCE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketBalanceUrlRegex, market.Url),
@@ -115,7 +117,7 @@ func (t *tdexMarketLoaderService) FetchBalance(
 		}
 
 		reply = &tdexv1.GetMarketBalanceResponse{}
-		if err := json.Unmarshal(r, reply); err != nil {
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return nil, err
 		}
 	}
@@ -151,7 +153,8 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	// Try HTTP/2 market price endpoint.
 	reply, err := client.GetMarketPrice(ctx, req)
 	if err != nil {
-		requestData, _ := json.Marshal(req)
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH PRICE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 market price endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
@@ -173,7 +176,7 @@ func (t *tdexMarketLoaderService) FetchPrice(
 		}
 
 		reply = &tdexv1.GetMarketPriceResponse{}
-		if err := json.Unmarshal(r, reply); err != nil {
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return nil, err
 		}
 	}
@@ -203,7 +206,8 @@ func (t *tdexMarketLoaderService) previewPrice(
 	// Try HTTP/2 endpoint.
 	reply, err := client.PreviewTrade(ctx, req)
 	if err != nil {
-		requestData, _ := json.Marshal(req)
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH PREVIEW", fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
@@ -216,7 +220,7 @@ func (t *tdexMarketLoaderService) previewPrice(
 		}
 
 		reply = &tdexv1.PreviewTradeResponse{}
-		if err := json.Unmarshal(r, reply); err != nil {
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return decimal.Zero, decimal.Zero, err
 		}
 	}
@@ -286,7 +290,7 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 		}
 
 		reply = &tdexv1.ListMarketsResponse{}
-		if err := json.Unmarshal(r, reply); err != nil {
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return nil, err
 		}
 	}
