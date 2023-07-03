@@ -125,7 +125,7 @@ func (m *marketPriceService) GetPrices(
 		// time frame to scale up/down aggregation window
 		for _, v := range marketsWithSameAssetPair {
 			vwamp, err := m.marketPriceRepository.CalculateVWAP(
-				ctx, "1h", startTime, endTime, v...)
+				ctx, timeFrame.toFluxDuration(), startTime, endTime, v...)
 			if err != nil {
 				return nil, err
 			}
