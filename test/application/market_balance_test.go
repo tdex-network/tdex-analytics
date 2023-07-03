@@ -3,9 +3,10 @@ package applicationtest
 import (
 	"context"
 	"errors"
-	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	"math"
 	"time"
+
+	"github.com/tdex-network/tdex-analytics/internal/core/application"
 )
 
 func (a *AppSvcTestSuit) TestGetMarketBalance() {
@@ -181,8 +182,8 @@ func (a *AppSvcTestSuit) TestGetMarketBalance() {
 				ctx: ctx,
 				timeRange: application.TimeRange{
 					CustomPeriod: &application.CustomPeriod{
-						StartDate: "2022-11-08T09:11:35.600Z",
-						EndDate:   "2022-11-08T09:16:35.600Z",
+						StartDate: time.Now().Add(-48 * time.Hour).Format(time.RFC3339Nano),
+						EndDate:   time.Now().Add(-40 * time.Hour).Format(time.RFC3339Nano),
 					},
 				},
 				marketIDs: []string{"1"},

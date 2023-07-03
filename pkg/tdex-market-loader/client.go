@@ -6,6 +6,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"net"
+	"net/http"
+	"strings"
+
 	"github.com/shopspring/decimal"
 	log "github.com/sirupsen/logrus"
 	tdexv1 "github.com/tdex-network/tdex-analytics/api-spec/protobuf/gen/tdex/v1"
@@ -13,11 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/credentials/insecure"
-	"io"
-	"io/ioutil"
-	"net"
-	"net/http"
-	"strings"
+	"google.golang.org/protobuf/encoding/protojson"
 )
 
 const (
@@ -92,26 +94,19 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	defer close()
 
 	client := tdexv1.NewTradeServiceClient(conn)
-	reply, err := client.GetMarketBalance(ctx, &tdexv1.GetMarketBalanceRequest{
+	req := &tdexv1.GetMarketBalanceRequest{
 		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
 		},
-	})
-	if err != nil {
-		requestData, err := json.Marshal(MarketReq{
-			MarketInfo: struct {
-				BaseAsset  string `json:"baseAsset"`
-				QuoteAsset string `json:"quoteAsset"`
-			}{
-				BaseAsset:  market.BaseAsset,
-				QuoteAsset: market.QuoteAsset,
-			},
-		})
-		if err != nil {
-			return nil, err
-		}
+	}
 
+	// Try HTTP/2 endpoint.
+	reply, err := client.GetMarketBalance(ctx, req)
+	if err != nil {
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH BALANCE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
+		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketBalanceUrlRegex, market.Url),
 			t.torProxyUrl, "POST",
@@ -121,25 +116,10 @@ func (t *tdexMarketLoaderService) FetchBalance(
 			return nil, err
 		}
 
-		fetchBalanceResponse := FetchBalanceResp{}
-		if err := json.Unmarshal(r, &fetchBalanceResponse); err != nil {
+		reply = &tdexv1.GetMarketBalanceResponse{}
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return nil, err
 		}
-
-		baseAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.BaseAmount)
-		if err != nil {
-			return nil, err
-		}
-
-		quoteAmount, err := decimal.NewFromString(fetchBalanceResponse.BalanceInfo.Balance.QuoteAmount)
-		if err != nil {
-			return nil, err
-		}
-
-		return &Balance{
-			BaseBalance:  baseAmount,
-			QuoteBalance: quoteAmount,
-		}, nil
 	}
 
 	return &Balance{
@@ -164,78 +144,30 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	defer close()
 
 	client := tdexv1.NewTradeServiceClient(conn)
-	reply, err := client.GetMarketPrice(ctx, &tdexv1.GetMarketPriceRequest{
+	req := &tdexv1.GetMarketPriceRequest{
 		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
 		},
-	})
+	}
+	// Try HTTP/2 market price endpoint.
+	reply, err := client.GetMarketPrice(ctx, req)
 	if err != nil {
-		bp, qp, err := t.previewPrice(ctx, client, market)
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH PRICE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
+		// Fallback to HTTP/1 market price endpoint.
+		r, err := http1Req(
+			fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
+			t.torProxyUrl,
+			"POST",
+			requestData,
+		)
 		if err != nil {
-			requestData, err := json.Marshal(MarketReq{
-				MarketInfo: struct {
-					BaseAsset  string `json:"baseAsset"`
-					QuoteAsset string `json:"quoteAsset"`
-				}{
-					BaseAsset:  market.BaseAsset,
-					QuoteAsset: market.QuoteAsset,
-				},
-			})
+			// Fallback to trade preview endpoint.
+			bp, qp, err := t.previewPrice(ctx, client, market)
 			if err != nil {
 				return nil, err
 			}
-
-			r, err := http1Req(
-				fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
-				t.torProxyUrl,
-				"POST",
-				requestData,
-			)
-			if err != nil {
-				r, err = http1Req(
-					fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
-					t.torProxyUrl,
-					"POST",
-					requestData,
-				)
-				if err != nil {
-					return nil, err
-				}
-
-				fetchMarketTradePreview := FetchMarketTradePreviewResp{}
-				if err := json.Unmarshal(r, &fetchMarketTradePreview); err != nil {
-					return nil, err
-				}
-
-				basePrices := make([]decimal.Decimal, 0)
-				quotePrices := make([]decimal.Decimal, 0)
-				for _, v := range fetchMarketTradePreview.Previews {
-					basePrices = append(basePrices, decimal.NewFromFloat(v.PriceInfo.BasePrice))
-					quotePrices = append(quotePrices, decimal.NewFromInt(int64(v.PriceInfo.QuotePrice)))
-				}
-
-				bp := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
-				qp := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
-
-				return &Price{
-					BasePrice:  bp,
-					QuotePrice: qp,
-				}, nil
-			}
-
-			fetchMarketPriceResponse := FetchMarketPriceResp{}
-			if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
-				return nil, err
-			}
-
-			minAmt, err := decimal.NewFromString(fetchMarketPriceResponse.MinTradableAmount)
-			if err := json.Unmarshal(r, &fetchMarketPriceResponse); err != nil {
-				return nil, err
-			}
-
-			qp := decimal.NewFromFloat(fetchMarketPriceResponse.SpotPrice)
-			bp := decimal.NewFromFloat(1).Div(minAmt)
 
 			return &Price{
 				BasePrice:  bp,
@@ -243,12 +175,13 @@ func (t *tdexMarketLoaderService) FetchPrice(
 			}, nil
 		}
 
-		basePrice = bp
-		quotePrice = qp
-	} else {
-		quotePrice = decimal.NewFromFloat(reply.GetSpotPrice())
-		basePrice = decimal.NewFromFloat(1).Div(quotePrice)
+		reply = &tdexv1.GetMarketPriceResponse{}
+		if err := protojson.Unmarshal(r, reply); err != nil {
+			return nil, err
+		}
 	}
+	quotePrice = decimal.NewFromFloat(reply.GetSpotPrice())
+	basePrice = decimal.NewFromFloat(1).Div(quotePrice)
 
 	return &Price{
 		BasePrice:  basePrice,
@@ -261,11 +194,7 @@ func (t *tdexMarketLoaderService) previewPrice(
 	client tdexv1.TradeServiceClient,
 	market Market,
 ) (decimal.Decimal, decimal.Decimal, error) {
-	var (
-		basePrice  decimal.Decimal
-		quotePrice decimal.Decimal
-	)
-	reply, err := client.PreviewTrade(ctx, &tdexv1.PreviewTradeRequest{
+	req := &tdexv1.PreviewTradeRequest{
 		Market: &tdexv1.Market{
 			BaseAsset:  market.BaseAsset,
 			QuoteAsset: market.QuoteAsset,
@@ -273,9 +202,27 @@ func (t *tdexMarketLoaderService) previewPrice(
 		Type:   tdexv1.TradeType_TRADE_TYPE_SELL,
 		Amount: uint64(t.priceAmount),
 		Asset:  market.BaseAsset,
-	})
+	}
+	// Try HTTP/2 endpoint.
+	reply, err := client.PreviewTrade(ctx, req)
 	if err != nil {
-		return decimal.Zero, decimal.Zero, err
+		requestData, _ := protojson.Marshal(req)
+		fmt.Println("FETCH PREVIEW", fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url), string(requestData))
+		// Fallback to HTTP/1 endpoint.
+		r, err := http1Req(
+			fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
+			t.torProxyUrl,
+			"POST",
+			requestData,
+		)
+		if err != nil {
+			return decimal.Zero, decimal.Zero, err
+		}
+
+		reply = &tdexv1.PreviewTradeResponse{}
+		if err := protojson.Unmarshal(r, reply); err != nil {
+			return decimal.Zero, decimal.Zero, err
+		}
 	}
 
 	basePrices := make([]decimal.Decimal, 0)
@@ -285,9 +232,8 @@ func (t *tdexMarketLoaderService) previewPrice(
 		quotePrices = append(quotePrices, decimal.NewFromFloat(v.GetPrice().GetQuotePrice()))
 	}
 
-	basePrice = decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
-	quotePrice = decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
-
+	basePrice := decimal.Avg(basePrices[0], basePrices[1:]...).Round(8)
+	quotePrice := decimal.Avg(quotePrices[0], quotePrices[1:]...).Round(8)
 	return basePrice, quotePrice, nil
 }
 
@@ -326,9 +272,12 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 	defer close()
 
 	client := tdexv1.NewTradeServiceClient(conn)
-	reply, err := client.ListMarkets(ctx, &tdexv1.ListMarketsRequest{})
+	req := &tdexv1.ListMarketsRequest{}
+	// Try HTTP/2 endpoint.
+	reply, err := client.ListMarkets(ctx, req)
 	if err != nil {
 		requestData := []byte("{}")
+		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(fmt.Sprintf(
 			listMarketsUrlRegex,
 			liquidityProvider.Endpoint),
@@ -340,19 +289,10 @@ func (t *tdexMarketLoaderService) fetchLiquidityProviderMarkets(
 			return nil, err
 		}
 
-		listMarketsResponse := ListMarketsResp{}
-		if err := json.Unmarshal(r, &listMarketsResponse); err != nil {
+		reply = &tdexv1.ListMarketsResponse{}
+		if err := protojson.Unmarshal(r, reply); err != nil {
 			return nil, err
 		}
-
-		for _, v := range listMarketsResponse.Markets {
-			resp = append(resp, Market{
-				QuoteAsset: v.MarketInfo.QuoteAsset,
-				BaseAsset:  v.MarketInfo.BaseAsset,
-			})
-		}
-
-		return resp, nil
 	}
 
 	for _, v := range reply.GetMarkets() {
