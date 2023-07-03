@@ -105,7 +105,6 @@ func (t *tdexMarketLoaderService) FetchBalance(
 	reply, err := client.GetMarketBalance(ctx, req)
 	if err != nil {
 		requestData, _ := protojson.Marshal(req)
-		fmt.Println("FETCH BALANCE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketBalanceUrlRegex, market.Url),
@@ -154,7 +153,6 @@ func (t *tdexMarketLoaderService) FetchPrice(
 	reply, err := client.GetMarketPrice(ctx, req)
 	if err != nil {
 		requestData, _ := protojson.Marshal(req)
-		fmt.Println("FETCH PRICE", fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 market price endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketPriceUrlRegex, market.Url),
@@ -207,7 +205,6 @@ func (t *tdexMarketLoaderService) previewPrice(
 	reply, err := client.PreviewTrade(ctx, req)
 	if err != nil {
 		requestData, _ := protojson.Marshal(req)
-		fmt.Println("FETCH PREVIEW", fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url), string(requestData))
 		// Fallback to HTTP/1 endpoint.
 		r, err := http1Req(
 			fmt.Sprintf(fetchMarketTradePreviewUrlRegex, market.Url),
