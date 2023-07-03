@@ -121,12 +121,10 @@ func (m *marketPriceService) GetPrices(
 
 	vwapPerMarket := make(map[string]decimal.Decimal)
 	if len(marketIDs) > 0 {
-		//TODO check time frame(start/stop) and average window
-		// it can happen that query is intensive, so we need to see based on
-		// time frame to scale up/down aggregation window
+		averageWindow := getAverageWindow(startTime, endTime)
 		for _, v := range marketsWithSameAssetPair {
 			vwamp, err := m.marketPriceRepository.CalculateVWAP(
-				ctx, timeFrame.toFluxDuration(), startTime, endTime, v...)
+				ctx, averageWindow, startTime, endTime, v...)
 			if err != nil {
 				return nil, err
 			}
@@ -212,6 +210,24 @@ func (m *marketPriceService) GetPrices(
 	return &MarketsPrices{
 		MarketsPrices: result,
 	}, nil
+}
+
+func getAverageWindow(startTime, endTime time.Time) string {
+	rangeDuration := endTime.Sub(startTime)
+
+	if rangeDuration <= 3*time.Hour {
+		return "1m"
+	} else if rangeDuration <= 24*time.Hour {
+		return "1h"
+	} else if rangeDuration <= 7*24*time.Hour {
+		return "6h"
+	} else if rangeDuration <= 30*24*time.Hour {
+		return "12h"
+	} else if rangeDuration <= 365*24*time.Hour {
+		return "1d"
+	} else {
+		return "15d"
+	}
 }
 
 func groupMarkets(
