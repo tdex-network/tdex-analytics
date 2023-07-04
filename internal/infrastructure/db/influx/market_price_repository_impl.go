@@ -128,7 +128,7 @@ func (i *influxDbService) CalculateVWAP(
 		contains(value: r.market_id, set: market_ids)
 	)
 	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
-	|> sort()
+	|> sort(columns: ["_time"])
 
 	priceStream = from(bucket: "analytics")
 	|> range(start: %s, stop: %s)
@@ -138,7 +138,7 @@ func (i *influxDbService) CalculateVWAP(
 		contains(value: r.market_id, set: market_ids)
 	)
 	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
-	|> sort()
+	|> sort(columns: ["_time"])
 
 	join(tables: {balance: balanceStream, price: priceStream}, on: ["market_id", "_time"])
 	|> map(fn: (r) => ({
@@ -172,6 +172,7 @@ func (i *influxDbService) CalculateVWAP(
     	r._field == "base_balance" and
     	contains(value: r.market_id, set: market_ids)
   	)
+	|> aggregateWindow(every: %s, fn: mean, createEmpty: false)
   	|> group()
 	|> sum()
 	|> yield()`
@@ -181,6 +182,7 @@ func (i *influxDbService) CalculateVWAP(
 		marketIdsFiler,
 		startTime.Format(time.RFC3339),
 		endTime.Format(time.RFC3339),
+		aggregationWindow,
 	)
 
 	priceBalanceProductSumResult, err := i.client.QueryAPI(i.org).Query(

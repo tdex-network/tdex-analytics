@@ -130,21 +130,24 @@ func (m *marketPriceService) GetPrices(
 			}
 
 			var averageReferentPrice decimal.Decimal
-			mktId, err := strconv.Atoi(v[0])
-			if err != nil {
-				return nil, err
-			}
-			quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(
-				marketsMap[mktId].QuoteAsset,
-			)
-			if err == nil {
-				unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
-					ctx,
-					quoteAssetTicker,
-					referenceCurrency,
+			if referenceCurrency != "" {
+				mktId, err := strconv.Atoi(v[0])
+				if err != nil {
+					return nil, err
+				}
+				quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(
+					marketsMap[mktId].QuoteAsset,
 				)
-
-				averageReferentPrice = vwamp.Mul(unitOfQuotePriceInRefCurrency)
+				if err == nil {
+					unitOfQuotePriceInRefCurrency, err := m.raterSvc.ConvertCurrency(
+						ctx,
+						quoteAssetTicker,
+						referenceCurrency,
+					)
+					if err == nil {
+						averageReferentPrice = vwamp.Mul(unitOfQuotePriceInRefCurrency)
+					}
+				}
 			}
 
 			averagePricesInfos = append(averagePricesInfos, AveragePriceInfo{
