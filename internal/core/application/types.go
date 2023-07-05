@@ -150,6 +150,7 @@ type Balance struct {
 type MarketsPrices struct {
 	//market_id and its Prices
 	MarketsPrices map[string][]Price
+	AveragePrices []AveragePriceInfo
 }
 
 type Price struct {
@@ -160,6 +161,12 @@ type Price struct {
 	QuoteAsset         string
 	QuoteReferentPrice decimal.Decimal
 	Time               time.Time
+}
+
+type AveragePriceInfo struct {
+	MarketIDs            []string
+	AveragePrice         decimal.Decimal
+	AverageReferentPrice decimal.Decimal
 }
 
 type TimeRange struct {

@@ -3,11 +3,12 @@ package application
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"github.com/tdex-network/tdex-analytics/internal/core/port"
 	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
-	"strconv"
-	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/shopspring/decimal"
@@ -113,9 +114,48 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
-	marketsMap := make(map[int]domain.Market)
-	for _, v := range markets {
-		marketsMap[v.ID] = v
+	marketsMap, marketsWithSameAssetPair, err := groupMarkets(markets, marketIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	averagePricesInfos := make([]AveragePriceInfo, 0)
+	if len(marketIDs) > 0 {
+		averageWindow := getAverageWindow(startTime, endTime)
+		for _, v := range marketsWithSameAssetPair {
+			vwamp, err := m.marketPriceRepository.CalculateVWAP(
+				ctx, averageWindow, startTime, endTime, v...)
+			if err != nil {
+				return nil, err
+			}
+
+			var averageReferentPrice decimal.Decimal
+			if referenceCurrency != "" {
+				mktId, err := strconv.Atoi(v[0])
+				if err != nil {
+					return nil, err
+				}
+				quoteAssetTicker, err := m.raterSvc.GetAssetCurrency(
+					marketsMap[mktId].QuoteAsset,
+				)
+				if err == nil {
+					unitOfQuotePriceInRefCurrency, err := m.raterSvc.ConvertCurrency(
+						ctx,
+						quoteAssetTicker,
+						referenceCurrency,
+					)
+					if err == nil {
+						averageReferentPrice = vwamp.Mul(unitOfQuotePriceInRefCurrency)
+					}
+				}
+			}
+
+			averagePricesInfos = append(averagePricesInfos, AveragePriceInfo{
+				MarketIDs:            v,
+				AveragePrice:         vwamp,
+				AverageReferentPrice: averageReferentPrice,
+			})
+		}
 	}
 
 	marketsPrices, err := m.marketPriceRepository.GetPricesForMarkets(
@@ -134,12 +174,12 @@ func (m *marketPriceService) GetPrices(
 	//purpose is to avoid multiple queries for same asset pair
 	refPricesPerAssetPair := make(map[string]referenceCurrencyPrice)
 	for k, v := range marketsPrices {
-		marketIdStr, err := strconv.Atoi(k)
+		marketIdInt, err := strconv.Atoi(k)
 		if err != nil {
 			return nil, err
 		}
-		baseAsset := marketsMap[marketIdStr].BaseAsset
-		quoteAsset := marketsMap[marketIdStr].QuoteAsset
+		baseAsset := marketsMap[marketIdInt].BaseAsset
+		quoteAsset := marketsMap[marketIdInt].QuoteAsset
 
 		prices := make([]Price, 0)
 		for _, v1 := range v {
@@ -178,7 +218,54 @@ func (m *marketPriceService) GetPrices(
 
 	return &MarketsPrices{
 		MarketsPrices: result,
+		AveragePrices: averagePricesInfos,
 	}, nil
+}
+
+func getAverageWindow(startTime, endTime time.Time) string {
+	rangeDuration := endTime.Sub(startTime)
+
+	if rangeDuration <= 3*time.Hour {
+		return "1m"
+	} else if rangeDuration <= 24*time.Hour {
+		return "1h"
+	} else if rangeDuration <= 7*24*time.Hour {
+		return "6h"
+	} else if rangeDuration <= 30*24*time.Hour {
+		return "12h"
+	} else if rangeDuration <= 365*24*time.Hour {
+		return "1d"
+	} else {
+		return "15d"
+	}
+}
+
+func groupMarkets(
+	markets []domain.Market, marketIdsForVwap []string,
+) (map[int]domain.Market, map[string][]string, error) {
+	marketsMap := make(map[int]domain.Market)
+	marketsWithSameAssetPair := make(map[string][]string)
+	marketIdsForVwapMap := make(map[int]bool)
+	for _, v := range marketIdsForVwap {
+		mktId, err := strconv.Atoi(v)
+		if err != nil {
+			return nil, nil, err
+		}
+		marketIdsForVwapMap[mktId] = true
+	}
+
+	for _, v := range markets {
+		marketsMap[v.ID] = v
+
+		if marketIdsForVwapMap[v.ID] {
+			if _, ok := marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset]; !ok {
+				marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] = make([]string, 0)
+			}
+			marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset] =
+				append(marketsWithSameAssetPair[v.BaseAsset+v.QuoteAsset], strconv.Itoa(v.ID))
+		}
+	}
+	return marketsMap, marketsWithSameAssetPair, nil
 }
 
 func (m *marketPriceService) getPricesInReferenceCurrency(
@@ -333,7 +420,7 @@ func (m *marketPriceService) FetchAndInsertPrice(
 		},
 	)
 	if err != nil {
-		log.Errorf("FetchAndInsertPrice -> FetchPrice: %v", err)
+		log.Errorf("FetchAndInsertPrice for %s -> FetchPrice: %v", market.Url, err)
 		return
 	}
 
@@ -345,7 +432,7 @@ func (m *marketPriceService) FetchAndInsertPrice(
 		QuoteAsset: market.QuoteAsset,
 		Time:       time.Now(),
 	}); err != nil {
-		log.Errorf("FetchAndInsertPrice -> InsertPrice: %v", err)
+		log.Errorf("FetchAndInsertPrice for %s -> InsertPrice: %v", market.Url, err)
 		return
 	}
 }

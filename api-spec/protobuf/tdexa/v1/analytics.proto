@@ -72,6 +72,8 @@ message MarketsPricesRequest {
 message MarketsPricesReply {
   // returns map of market_id and its prices sorted by time ASC
   map<string, MarketPrices> markets_prices = 1;
+  // average price
+  repeated AveragePrice average_prices = 2;
 }
 message MarketPrices {
   // returns list of Market's and their prices
@@ -88,6 +90,15 @@ message MarketPrice {
   double quote_reference_price = 4;
   // point in time when market had this price
   string time = 5;
+}
+
+message AveragePrice {
+  // market_ids for which average price is calculated
+  repeated string market_ids = 1;
+  // average price for the specified time_frame
+  double average_price = 6;
+  // average price converted to reference one
+  double average_reference_price = 7;
 }
 
 // TimeRange is flexible type used to determine time span for which specific
