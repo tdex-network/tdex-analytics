@@ -159,11 +159,7 @@ func (e *exchangeRateWrapper) ConvertCurrency(
 		return decimal.NewFromFloat(1), nil
 	}
 
-	isFiatSymbol, err := e.IsFiatSymbolSupported(target)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
+	isFiatSymbol, _ := e.IsFiatSymbolSupported(source)
 	if isFiatSymbol {
 		return e.getFiatToFiatRate(source, target)
 	}
@@ -259,21 +255,21 @@ func (e *exchangeRateWrapper) getFiatToFiatRate(
 	e.ratesLock.Lock()
 	defer e.ratesLock.Unlock()
 	// Update cache once a day
-	if cache, ok := e.ratesCache[target]; !ok || time.Since(cache.lastUpdate).Hours() >= 24 {
-		data, err := fetchRates(e.httpClient, target)
+	if cache, ok := e.ratesCache[source]; !ok || time.Since(cache.lastUpdate).Hours() >= 24 {
+		data, err := fetchRates(e.httpClient, source)
 		if err != nil {
 			if !ok {
 				return decimal.Zero, err
 			}
-			return cache.rates[source], nil
+			return cache.rates[target], nil
 		}
-		e.ratesCache[target] = ratesCache{
+		e.ratesCache[source] = ratesCache{
 			rates:      data.rates,
 			lastUpdate: time.Now(),
 		}
 	}
 
-	return e.ratesCache[target].rates[source], nil
+	return e.ratesCache[source].rates[target], nil
 }
 
 // reloadCoinList reloads the coin list from coin gecko
