@@ -159,25 +159,21 @@ func (e *exchangeRateWrapper) ConvertCurrency(
 		return decimal.NewFromFloat(1), nil
 	}
 
-	isCryptoSymbol, err := e.isCryptoSymbol(ctx, e.coinGeckoWaitDuration, source)
+	isFiatSymbol, err := e.IsFiatSymbolSupported(target)
 	if err != nil {
 		return decimal.Zero, err
 	}
 
-	if isCryptoSymbol {
-		return e.getCryptoToFiatRate(ctx, source, target)
+	if isFiatSymbol {
+		return e.getFiatToFiatRate(source, target)
 	}
 
-	sourceValidFiatSymbol, err := e.IsFiatSymbolSupported(target)
-	if err != nil {
-		return decimal.Zero, err
-	}
-
-	if !isCryptoSymbol && !sourceValidFiatSymbol {
+	isCryptoSymbol, _ := e.isCryptoSymbol(ctx, e.coinGeckoWaitDuration, source)
+	if !isCryptoSymbol {
 		return decimal.Zero, fmt.Errorf("%s is not a supported fiat nor crypto symbol", source)
 	}
 
-	return e.getFiatToFiatRate(source, target)
+	return e.getCryptoToFiatRate(ctx, source, target)
 }
 
 func (e *exchangeRateWrapper) IsFiatSymbolSupported(symbol string) (bool, error) {
@@ -262,10 +258,6 @@ func (e *exchangeRateWrapper) getFiatToFiatRate(
 ) (decimal.Decimal, error) {
 	e.ratesLock.Lock()
 	defer e.ratesLock.Unlock()
-
-	source = strings.ToUpper(source)
-	target = strings.ToUpper(target)
-
 	// Update cache once a day
 	if cache, ok := e.ratesCache[target]; !ok || time.Since(cache.lastUpdate).Hours() >= 24 {
 		data, err := fetchRates(e.httpClient, target)
