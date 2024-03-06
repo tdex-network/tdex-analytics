@@ -2,11 +2,12 @@ package application
 
 import (
 	"context"
+	"reflect"
+	"testing"
+
 	"github.com/stretchr/testify/require"
 	"github.com/tdex-network/tdex-analytics/internal/core/domain"
 	"github.com/tdex-network/tdex-analytics/internal/core/port"
-	"reflect"
-	"testing"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/mock"
@@ -28,9 +29,8 @@ var (
 )
 
 type args struct {
-	referenceCurrency     string
-	price                 domain.MarketPrice
-	refPricesPerAssetPair map[string]referenceCurrencyPrice
+	referenceCurrency string
+	price             domain.MarketPrice
 }
 
 type test struct {
@@ -49,9 +49,8 @@ func TestMarketPriceService(t *testing.T) {
 				{
 					name: "lbtc_usdt to eur with base price conversion",
 					args: args{
-						referenceCurrency:     "EUR",
-						price:                 lbtcUsdtMarket,
-						refPricesPerAssetPair: make(map[string]referenceCurrencyPrice),
+						referenceCurrency: "EUR",
+						price:             lbtcUsdtMarket,
 					},
 					raterSvc:                        mockRater("LBTC", "USDT", "LBTC", "USDT", decimal.NewFromFloat(37384.11), decimal.Zero, false, true, nil),
 					expectedBasePriceInRefCurrency:  decimal.NewFromFloat(0.93),
@@ -60,9 +59,8 @@ func TestMarketPriceService(t *testing.T) {
 				{
 					name: "lbtc_usdt to eur with quote price conversion",
 					args: args{
-						referenceCurrency:     "EUR",
-						price:                 lbtcUsdtMarket,
-						refPricesPerAssetPair: make(map[string]referenceCurrencyPrice),
+						referenceCurrency: "EUR",
+						price:             lbtcUsdtMarket,
 					},
 					raterSvc:                        mockRater("LBTC", "USDT", "LBTC", "USDT", decimal.Zero, decimal.NewFromFloat(0.93), false, true, nil),
 					expectedBasePriceInRefCurrency:  decimal.NewFromFloat(0.93),
@@ -71,9 +69,8 @@ func TestMarketPriceService(t *testing.T) {
 				{
 					name: "usdt_lbtc to eur with base price conversion",
 					args: args{
-						referenceCurrency:     "EUR",
-						price:                 usdtLbtcMarket,
-						refPricesPerAssetPair: make(map[string]referenceCurrencyPrice),
+						referenceCurrency: "EUR",
+						price:             usdtLbtcMarket,
 					},
 					raterSvc:                        mockRater("USDT", "LBTC", "USDT", "LBTC", decimal.NewFromFloat(0.93), decimal.Zero, true, false, nil),
 					expectedBasePriceInRefCurrency:  decimal.NewFromFloat(37384.11),
@@ -82,9 +79,8 @@ func TestMarketPriceService(t *testing.T) {
 				{
 					name: "usdt_lbtc to eur with quote price conversion",
 					args: args{
-						referenceCurrency:     "EUR",
-						price:                 usdtLbtcMarket,
-						refPricesPerAssetPair: make(map[string]referenceCurrencyPrice),
+						referenceCurrency: "EUR",
+						price:             usdtLbtcMarket,
 					},
 					raterSvc:                        mockRater("USDT", "LBTC", "USDT", "LBTC", decimal.Zero, decimal.NewFromFloat(37384.11), true, false, nil),
 					expectedBasePriceInRefCurrency:  decimal.NewFromFloat(37384.11),
@@ -99,7 +95,6 @@ func TestMarketPriceService(t *testing.T) {
 						context.Background(),
 						tt.args.price,
 						tt.args.referenceCurrency,
-						tt.args.refPricesPerAssetPair,
 					)
 					if err != nil {
 						t.Fatal(err)
@@ -124,7 +119,6 @@ func TestMarketPriceService(t *testing.T) {
 						context.Background(),
 						tt.args.price,
 						tt.args.referenceCurrency,
-						tt.args.refPricesPerAssetPair,
 					)
 					if err == nil || err.Error() != tt.expectedErr.Error() {
 						t.Errorf("got error = %v, wantErr %v", err, tt.expectedErr)

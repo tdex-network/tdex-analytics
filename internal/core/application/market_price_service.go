@@ -170,9 +170,6 @@ func (m *marketPriceService) GetPrices(
 		return nil, err
 	}
 
-	//refPricesPerAssetPair holds prices for all assets pairs for reference currency
-	//purpose is to avoid multiple queries for same asset pair
-	refPricesPerAssetPair := make(map[string]referenceCurrencyPrice)
 	for k, v := range marketsPrices {
 		marketIdInt, err := strconv.Atoi(k)
 		if err != nil {
@@ -192,7 +189,6 @@ func (m *marketPriceService) GetPrices(
 					ctx,
 					v1,
 					referenceCurrency,
-					refPricesPerAssetPair,
 				)
 				if err != nil {
 					log.Debugf("GetPrices -> getPricesInReferenceCurrency: %v", err)
@@ -272,19 +268,8 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 	ctx context.Context,
 	mktPrice domain.MarketPrice,
 	referenceCurrency string,
-	refPricesPerAssetPair map[string]referenceCurrencyPrice,
-) (
-	basePriceInRefCurrency decimal.Decimal,
-	quotePriceInRefCurrency decimal.Decimal,
-	err error,
-) {
-	assetPair := fmt.Sprintf("%s_%s", mktPrice.BaseAsset, mktPrice.QuoteAsset)
-	if v, ok := refPricesPerAssetPair[assetPair]; ok {
-		return v.basePrice, v.quotePrice, nil
-	}
-
-	baseAssetTickerFound, quoteAssetTickerFound, isBaseAssetStable, isQuoteAssetStable :=
-		false, false, false, false
+) (decimal.Decimal, decimal.Decimal, error) {
+	baseAssetTickerFound, quoteAssetTickerFound := false, false
 	baseAssetTicker, err := m.raterSvc.GetAssetCurrency(mktPrice.BaseAsset)
 	if err == nil {
 		baseAssetTickerFound = true
@@ -294,87 +279,37 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 		quoteAssetTickerFound = true
 	}
 
+	var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
+
 	if baseAssetTickerFound {
-		isBaseAssetStable, _ = m.raterSvc.IsFiatSymbolSupported(baseAssetTicker)
-	}
-	if quoteAssetTickerFound {
-		isQuoteAssetStable, _ = m.raterSvc.IsFiatSymbolSupported(quoteAssetTicker)
-	}
-
-	defer func() {
-		if !basePriceInRefCurrency.IsZero() && !quotePriceInRefCurrency.IsZero() {
-			refPricesPerAssetPair[assetPair] = referenceCurrencyPrice{
-				basePrice:  basePriceInRefCurrency,
-				quotePrice: quotePriceInRefCurrency,
-			}
-		}
-	}()
-
-	switch {
-	case isBaseAssetStable:
-		unitOfBasePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 			ctx,
 			baseAssetTicker,
 			referenceCurrency,
 		)
-		if !unitOfBasePriceInRefCurrency.IsZero() {
-			basePriceInRefCurrency = unitOfBasePriceInRefCurrency.Mul(mktPrice.BasePrice)
-			quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
-		} else {
-			if quoteAssetTickerFound {
-				basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
-					ctx,
-					quoteAssetTicker,
-					referenceCurrency,
-				)
-				quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
-			}
-		}
-	case isQuoteAssetStable:
-		unitOfQuotePriceInRefCurrency, _ := m.raterSvc.ConvertCurrency(
+	}
+	if quoteAssetTickerFound {
+		quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 			ctx,
 			quoteAssetTicker,
 			referenceCurrency,
 		)
-		if !unitOfQuotePriceInRefCurrency.IsZero() {
-			quotePriceInRefCurrency = unitOfQuotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
-			basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
-		} else {
-			if baseAssetTickerFound {
-				quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
-					ctx,
-					baseAssetTicker,
-					referenceCurrency,
-				)
-				basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
-			}
-		}
-	case !isBaseAssetStable && !isQuoteAssetStable:
-		if baseAssetTickerFound && quoteAssetTickerFound {
-			basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
-				ctx,
-				baseAssetTicker,
-				referenceCurrency,
-			)
-			quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
-				ctx,
-				quoteAssetTicker,
-				referenceCurrency,
-			)
-		}
-
-		// TODO: uncomment this when we find a way to convert the prices of a
-		// market with no stable coins to ref currency in case we fail to retrieve
-		// one of the 2. For now, we return what we got from the rater service to
-		// keep it simple.
-		//
-		// if basePriceInRefCurrency.IsZero() == quotePriceInRefCurrency.IsZero() {
-		// 	return
-		// }
 	}
+
+	if basePriceInRefCurrency.IsZero() == quotePriceInRefCurrency.IsZero() {
+		return basePriceInRefCurrency, quotePriceInRefCurrency, nil
+	}
+
+	if !basePriceInRefCurrency.IsZero() {
+		quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+	} else if !quotePriceInRefCurrency.IsZero() {
+		basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+	}
+
 	basePriceInRefCurrency = basePriceInRefCurrency.Round(2)
 	quotePriceInRefCurrency = quotePriceInRefCurrency.Round(2)
-	return
+
+	return basePriceInRefCurrency, quotePriceInRefCurrency, nil
 }
 
 func (m *marketPriceService) StartFetchingPricesJob() error {
