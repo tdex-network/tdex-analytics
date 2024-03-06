@@ -50,6 +50,11 @@ type coinListInfo struct {
 	refreshTimestamp time.Time
 }
 
+type ratesCache struct {
+	rates      map[string]decimal.Decimal
+	lastUpdate time.Time
+}
+
 type exchangeRateWrapper struct {
 	httpClient *http.Client
 
@@ -78,6 +83,10 @@ type exchangeRateWrapper struct {
 	// symbols is a cache of the fiat symbols supported, it is fetched only once
 	// at startup
 	symbols map[string]struct{}
+
+	// cache for fiat rates
+	ratesCache map[string]ratesCache
+	ratesLock  *sync.Mutex
 
 	// rateLimiter is the rate limiter(token bucket) for the coin gecko api
 	rateLimiter *rate.Limiter
@@ -128,6 +137,8 @@ func NewExchangeRateClient(
 		},
 		coinListMtx: sync.RWMutex{},
 		symbols:     symbols,
+		ratesCache:  make(map[string]ratesCache),
+		ratesLock:   &sync.Mutex{},
 		rateLimiter: rate.NewLimiter(rate.Every(time.Minute), numOfCallsPerMin),
 	}, nil
 }
@@ -249,15 +260,28 @@ func (e *exchangeRateWrapper) getFiatToFiatRate(
 	source string,
 	target string,
 ) (decimal.Decimal, error) {
+	e.ratesLock.Lock()
+	defer e.ratesLock.Unlock()
+
 	source = strings.ToUpper(source)
 	target = strings.ToUpper(target)
 
-	data, err := fetchRates(e.httpClient, target)
-	if err != nil {
-		return decimal.Zero, err
+	// Update cache once a day
+	if cache, ok := e.ratesCache[target]; !ok || time.Since(cache.lastUpdate).Hours() >= 24 {
+		data, err := fetchRates(e.httpClient, target)
+		if err != nil {
+			if !ok {
+				return decimal.Zero, err
+			}
+			return cache.rates[source], nil
+		}
+		e.ratesCache[target] = ratesCache{
+			rates:      data.rates,
+			lastUpdate: time.Now(),
+		}
 	}
 
-	return data.rates[source], nil
+	return e.ratesCache[target].rates[source], nil
 }
 
 // reloadCoinList reloads the coin list from coin gecko
