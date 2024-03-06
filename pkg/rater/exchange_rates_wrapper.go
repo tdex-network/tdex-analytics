@@ -1,28 +1,26 @@
 package rater
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/tdex-network/tdex-analytics/internal/core/port"
-	"golang.org/x/time/rate"
-	"io/ioutil"
+	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
+	"github.com/tdex-network/tdex-analytics/internal/core/port"
+	"golang.org/x/time/rate"
 )
 
 const (
 	// httpTimeout is the timeout for http requests
 	httpTimeout = 10
 	// exchangeRateApiUrl is the url of the exchange rate wrapper
-	exchangeRateApiUrl = "https://api.exchangerate.host"
+	exchangeRateApiUrl = "https://open.er-api.com/v6/latest"
 	coinGeckoBtcID     = "bitcoin"
 	btcSymbol          = "btc"
 	lbtcSymbol         = "lbtc"
@@ -77,6 +75,10 @@ type exchangeRateWrapper struct {
 	//coinGeckoRefreshInterval
 	coins coinListInfo
 
+	// symbols is a cache of the fiat symbols supported, it is fetched only once
+	// at startup
+	symbols map[string]struct{}
+
 	// rateLimiter is the rate limiter(token bucket) for the coin gecko api
 	rateLimiter *rate.Limiter
 }
@@ -86,7 +88,7 @@ func NewExchangeRateClient(
 	coinGeckoNumOfCallsPerMin *int,
 	coinGeckoRefreshInterval *time.Duration,
 	coinGeckoWaitDuration *time.Duration,
-) port.RateService {
+) (port.RateService, error) {
 	httpClient := &http.Client{
 		Timeout: time.Second * httpTimeout,
 	}
@@ -108,6 +110,11 @@ func NewExchangeRateClient(
 		waitDuration = *coinGeckoWaitDuration
 	}
 
+	symbols, err := fetchSymbols(httpClient)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch symbols: %s", err)
+	}
+
 	return &exchangeRateWrapper{
 		httpClient:               httpClient,
 		coinGeckoSvc:             coinGeckoSvc,
@@ -120,8 +127,9 @@ func NewExchangeRateClient(
 			coinList: make(map[string]string),
 		},
 		coinListMtx: sync.RWMutex{},
+		symbols:     symbols,
 		rateLimiter: rate.NewLimiter(rate.Every(time.Minute), numOfCallsPerMin),
-	}
+	}, nil
 }
 
 func (e *exchangeRateWrapper) ConvertCurrency(
@@ -158,35 +166,12 @@ func (e *exchangeRateWrapper) ConvertCurrency(
 		return decimal.Zero, fmt.Errorf("%s is not a supported fiat nor crypto symbol", source)
 	}
 
-	return e.getFiatToFiatRate(ctx, source, target)
+	return e.getFiatToFiatRate(source, target)
 }
 
 func (e *exchangeRateWrapper) IsFiatSymbolSupported(symbol string) (bool, error) {
-	symbol = strings.ToLower(symbol)
-
-	urlSymbols := fmt.Sprintf("%s/%s", exchangeRateApiUrl, "symbols")
-	resp, err := e.httpClient.Get(urlSymbols)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return false, fmt.Errorf(
-			"unexpected status code: %d, error: %v",
-			resp.StatusCode,
-			resp.Body,
-		)
-	}
-
-	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
-	if err != nil {
-		return false, err
-	}
-	respStr := buf.String()
-
-	return strings.Contains(respStr, fmt.Sprintf("\"%s\"", strings.ToUpper(symbol))), nil
+	_, ok := e.symbols[strings.ToLower(symbol)]
+	return ok, nil
 }
 
 func (e *exchangeRateWrapper) GetAssetCurrency(
@@ -233,8 +218,8 @@ func (e *exchangeRateWrapper) isCryptoSymbol(
 }
 
 // getCryptoToFiatRate returns the rate of one source crypt coin to the target fiat
-//data are fetched from coin gecko and in order to prevent rate limit errors, the
-//rates are cached and reloaded every coinGeckoRefreshInterval
+// data are fetched from coin gecko and in order to prevent rate limit errors, the
+// rates are cached and reloaded every coinGeckoRefreshInterval
 func (e *exchangeRateWrapper) getCryptoToFiatRate(
 	ctx context.Context,
 	source string,
@@ -253,7 +238,7 @@ func (e *exchangeRateWrapper) getCryptoToFiatRate(
 			return decimal.Decimal{}, err
 		}
 
-		quotePerBase, _ := e.exchangeRates[quote][base]
+		quotePerBase := e.exchangeRates[quote][base]
 		return quotePerBase.baseRate, nil
 	}
 
@@ -261,83 +246,18 @@ func (e *exchangeRateWrapper) getCryptoToFiatRate(
 }
 
 func (e *exchangeRateWrapper) getFiatToFiatRate(
-	ctx context.Context,
 	source string,
 	target string,
 ) (decimal.Decimal, error) {
 	source = strings.ToUpper(source)
 	target = strings.ToUpper(target)
 
-	params := map[string]string{
-		"base":    source,
-		"symbols": target,
-		"date":    time.Now().Format("2006-01-02"),
-	}
-
-	rates, err := e.fetchRates(params)
+	data, err := fetchRates(e.httpClient, target)
 	if err != nil {
 		return decimal.Zero, err
 	}
 
-	// current api provider returns target conversion to eur if source is not supported
-	if rates.Base != source {
-		return decimal.Zero, port.ErrCurrencyNotFound
-	}
-
-	return decimal.NewFromFloat(rates.Rates[target]), nil
-}
-
-type RateResponse struct {
-	Base  string             `json:"base"`
-	Date  string             `json:"date"`
-	Rates map[string]float64 `json:"rates"`
-}
-
-func (e *exchangeRateWrapper) fetchRates(params map[string]string) (RateResponse, error) {
-	var result RateResponse
-
-	urlRates, err := url.Parse(fmt.Sprintf("%s/%s", exchangeRateApiUrl, params["date"]))
-	if err != nil {
-		return result, err
-	}
-
-	urlRates.Path = "latest"
-	if len(params) > 0 {
-		q := urlRates.Query()
-		if params["base"] != "" {
-			q.Set("base", strings.ToUpper(params["base"]))
-		}
-		if params["symbols"] != "" {
-			q.Set("symbols", strings.ToUpper(params["symbols"]))
-		}
-		urlRates.RawQuery = q.Encode()
-	}
-
-	resp, err := e.httpClient.Get(urlRates.String())
-	if err != nil {
-		return result, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return result, fmt.Errorf(
-			"unexpected status code: %d, error: %v",
-			resp.StatusCode,
-			resp.Body,
-		)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return result, err
-	}
-
-	err = json.Unmarshal(body, &result)
-	if err != nil {
-		return result, err
-	}
-
-	return result, nil
+	return data.rates[source], nil
 }
 
 // reloadCoinList reloads the coin list from coin gecko
@@ -422,4 +342,75 @@ func (e *exchangeRateWrapper) reloadQuoteBasePair(
 	}
 
 	return nil
+}
+
+func fetchSymbols(httpClient *http.Client) (map[string]struct{}, error) {
+	data, err := fetchRates(httpClient, "usd")
+	if err != nil {
+		return nil, err
+	}
+
+	symbols := make(map[string]struct{})
+	for symbol := range data.rates {
+		symbols[strings.ToLower(symbol)] = struct{}{}
+	}
+
+	return symbols, nil
+}
+
+type rateResponse struct {
+	base  string
+	date  string
+	rates map[string]decimal.Decimal
+}
+
+func fetchRates(httpClient *http.Client, base string) (*rateResponse, error) {
+	base = strings.ToUpper(base)
+	url := fmt.Sprintf("%s/%s", exchangeRateApiUrl, base)
+	resp, err := httpClient.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf(
+			"unexpected status code: %d, error: %v",
+			resp.StatusCode,
+			resp.Body,
+		)
+	}
+
+	buf, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	body := make(map[string]interface{})
+	if err := json.Unmarshal(buf, &body); err != nil {
+		return nil, err
+	}
+
+	base, ok := body["base_code"].(string)
+	if !ok {
+		return nil, fmt.Errorf("base code not found")
+	}
+	date, ok := body["time_last_update_utc"].(string)
+	if !ok {
+		return nil, fmt.Errorf("date not found")
+	}
+	r, ok := body["rates"].(map[string]interface{})
+	if !ok {
+		return nil, fmt.Errorf("rates list not found")
+	}
+	rates := make(map[string]decimal.Decimal)
+	for symbol, rate := range r {
+		rates[strings.ToLower(symbol)] = decimal.NewFromFloat(rate.(float64))
+	}
+
+	return &rateResponse{
+		base:  strings.ToLower(base),
+		date:  date,
+		rates: rates,
+	}, nil
 }

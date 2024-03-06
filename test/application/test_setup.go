@@ -2,12 +2,13 @@ package applicationtest
 
 import (
 	"context"
+	"os"
+
 	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
 	dbpg "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/pg"
 	"github.com/tdex-network/tdex-analytics/pkg/rater"
 	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
-	"os"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -79,6 +80,18 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		1000,
 	)
 
+	raterSvc, err := rater.NewExchangeRateClient(map[string]string{
+		"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225": "bitcoin",
+		"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d": "bitcoin",
+	},
+		nil,
+		nil,
+		nil,
+	)
+	if err != nil {
+		a.FailNow(err.Error())
+	}
+
 	marketLoaderSvc = application.NewMarketsLoaderService(
 		marketRepository,
 		tdexMarketLoaderSvc,
@@ -94,14 +107,7 @@ func (a *AppSvcTestSuit) SetupSuite() {
 		marketRepository,
 		tdexMarketLoaderSvc,
 		"5",
-		rater.NewExchangeRateClient(map[string]string{
-			"5ac9f65c0efcc4775e0baec4ec03abdde22473cd3cf33c0419ca290e0751b225": "bitcoin",
-			"6f0279e9ed041c3d710a9f57d0c02928416460c4b722ae3457a11eec381c526d": "bitcoin",
-		},
-			nil,
-			nil,
-			nil,
-		),
+		raterSvc,
 	)
 	marketSvc = application.NewMarketService(marketRepository)
 }

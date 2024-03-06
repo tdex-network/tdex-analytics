@@ -2,6 +2,12 @@ package main
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+
 	"github.com/tdex-network/tdex-analytics/internal/config"
 	"github.com/tdex-network/tdex-analytics/internal/core/application"
 	dbinflux "github.com/tdex-network/tdex-analytics/internal/infrastructure/db/influx"
@@ -9,11 +15,6 @@ import (
 	tdexagrpc "github.com/tdex-network/tdex-analytics/internal/interface/grpc"
 	"github.com/tdex-network/tdex-analytics/pkg/rater"
 	tdexmarketloader "github.com/tdex-network/tdex-analytics/pkg/tdex-market-loader"
-	"log"
-	"os"
-	"os/signal"
-	"strconv"
-	"syscall"
 )
 
 func main() {
@@ -59,12 +60,15 @@ func main() {
 		config.GetString(config.JobPeriodInMinutes),
 	)
 
-	raterSvc := rater.NewExchangeRateClient(
+	raterSvc, err := rater.NewExchangeRateClient(
 		config.GetAssetCurrencyPair(),
 		nil,
 		nil,
 		nil,
 	)
+	if err != nil {
+		log.Fatalln(err.Error())
+	}
 
 	marketPriceSvc := application.NewMarketPriceService(
 		influxDbSvc,

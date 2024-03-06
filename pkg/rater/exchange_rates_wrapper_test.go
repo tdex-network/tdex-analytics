@@ -3,11 +3,12 @@ package rater
 import (
 	"context"
 	"fmt"
-	"github.com/tdex-network/tdex-analytics/internal/core/port"
-	"golang.org/x/time/rate"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/tdex-network/tdex-analytics/internal/core/port"
+	"golang.org/x/time/rate"
 
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +23,7 @@ func TestExchangeRateWrapperGetFiatToFiatRate(t *testing.T) {
 		},
 	}
 
-	_, err := e.getFiatToFiatRate(context.Background(), "eur", "usd")
+	_, err := e.getFiatToFiatRate("eur", "usd")
 	assert.NoError(t, err)
 }
 
@@ -109,12 +110,14 @@ func TestExchangeRateWrapperGetCryptoToFiatRateLimiterWaitInterval(t *testing.T)
 }
 
 func TestExchangeRateWrapperConvertCurrency(t *testing.T) {
-	client := NewExchangeRateClient(
+	client, err := NewExchangeRateClient(
 		nil,
 		nil,
 		nil,
 		nil,
 	)
+	assert.NoError(t, err)
+
 	result, err := client.ConvertCurrency(context.Background(), "EUR", "USD")
 	if err != nil {
 		t.Error(err)
@@ -123,13 +126,15 @@ func TestExchangeRateWrapperConvertCurrency(t *testing.T) {
 }
 
 func TestExchangeRateWrapperConvertCurrencyNegativeScenario(t *testing.T) {
-	client := NewExchangeRateClient(
+	client, err := NewExchangeRateClient(
 		nil,
 		nil,
 		nil,
 		nil,
 	)
-	_, err := client.ConvertCurrency(context.Background(), "dwdw", "eur")
+	assert.NoError(t, err)
+
+	_, err = client.ConvertCurrency(context.Background(), "dwdw", "eur")
 	assert.Equal(t, port.ErrCurrencyNotFound.Error(), err.Error())
 }
 

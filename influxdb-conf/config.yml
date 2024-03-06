@@ -22,7 +22,7 @@ pprof-disabled: false
 query-concurrency: 1024
 query-initial-memory-bytes: 0
 query-max-memory-bytes: 0
-query-memory-bytes: 9223372036854775807
+query-memory-bytes: 0
 query-queue-size: 1024
 reporting-disabled: false
 secret-store: bolt
