@@ -282,14 +282,14 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 	var basePriceInRefCurrency, quotePriceInRefCurrency decimal.Decimal
 
 	if baseAssetTickerFound {
-		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+		quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 			ctx,
 			baseAssetTicker,
 			referenceCurrency,
 		)
 	}
 	if quoteAssetTickerFound {
-		quotePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
+		basePriceInRefCurrency, _ = m.raterSvc.ConvertCurrency(
 			ctx,
 			quoteAssetTicker,
 			referenceCurrency,
@@ -297,13 +297,15 @@ func (m *marketPriceService) getPricesInReferenceCurrency(
 	}
 
 	if basePriceInRefCurrency.IsZero() == quotePriceInRefCurrency.IsZero() {
+		basePriceInRefCurrency = basePriceInRefCurrency.Round(2)
+		quotePriceInRefCurrency = quotePriceInRefCurrency.Round(2)
 		return basePriceInRefCurrency, quotePriceInRefCurrency, nil
 	}
 
 	if !basePriceInRefCurrency.IsZero() {
 		quotePriceInRefCurrency = basePriceInRefCurrency.Mul(mktPrice.QuotePrice)
 	} else if !quotePriceInRefCurrency.IsZero() {
-		basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.QuotePrice)
+		basePriceInRefCurrency = quotePriceInRefCurrency.Mul(mktPrice.BasePrice)
 	}
 
 	basePriceInRefCurrency = basePriceInRefCurrency.Round(2)
